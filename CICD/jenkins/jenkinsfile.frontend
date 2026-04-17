@@ -20,12 +20,9 @@ spec:
       command: ['/busybox/sh','-c','sleep infinity']
       tty: true
     - name: kubectl
-          image: bitnami/kubectl:latest
-          command: ['cat']
-          tty: true
-      volumeMounts:
-        - name: docker-config
-          mountPath: /kaniko/.docker
+      image: bitnami/kubectl:latest
+      command: ['cat']
+      tty: true
   volumes:
     - name: docker-config
       secret:
