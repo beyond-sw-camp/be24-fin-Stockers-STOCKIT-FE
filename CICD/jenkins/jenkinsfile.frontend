@@ -93,10 +93,7 @@ spec:
         // jnlp(기본컨테이너)에서 실행
         container('kubectl') {
           script {
-            sh "sed -i 's/\${IMAGE_TAG}/${IMAGE_TAG}/g' CICD/k8s/front-deployment.yml"
-            sh "kubectl apply -f CICD/k8s/front-deployment.yml"
-            sh "kubectl apply -f CICD/k8s/front-service.yml"
-            sh "kubectl apply -f CICD/k8s/front-configmap.yml"
+            sh "echo test > /tmp/test"
           }
         }
       }
