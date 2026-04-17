@@ -19,6 +19,10 @@ spec:
       image: gcr.io/kaniko-project/executor:debug
       command: ['/busybox/sh','-c','sleep infinity']
       tty: true
+    - name: kubectl
+          image: bitnami/kubectl:latest
+          command: ['cat']
+          tty: true
       volumeMounts:
         - name: docker-config
           mountPath: /kaniko/.docker
@@ -79,12 +83,14 @@ spec:
     stage('K8s Deployment') {
       steps {
         // jnlp(기본컨테이너)에서 실행
-        script {
-          // 파일 경로가 CICD/k8s 인지 확인 필요
-          sh "sed -i 's/\${IMAGE_TAG}/${IMAGE_TAG}/g' CICD/k8s/front-deployment.yml"
-          sh "kubectl apply -f CICD/k8s/front-deployment.yml"
-          sh "kubectl apply -f CICD/k8s/front-service.yml"
-          sh "kubectl apply -f CICD/k8s/front-configmap.yml"
+        container('kubectl') {
+          script {
+            // 파일 경로가 CICD/k8s 인지 확인 필요
+            sh "sed -i 's/\${IMAGE_TAG}/${IMAGE_TAG}/g' CICD/k8s/front-deployment.yml"
+            sh "kubectl apply -f CICD/k8s/front-deployment.yml"
+            sh "kubectl apply -f CICD/k8s/front-service.yml"
+            sh "kubectl apply -f CICD/k8s/front-configmap.yml"
+          }
         }
       }
     }
