@@ -68,7 +68,7 @@ spec:
           sh """
             /kaniko/executor \
               --context=${WORKSPACE} \
-              --dockerfile=${WORKSPACE}/Dockerfile \
+              --dockerfile=${WORKSPACE}/CICD/docker/Dockerfile \
               --destination=${IMAGE_NAME}:${IMAGE_TAG} \
               --destination=${IMAGE_NAME}:latest
           """
