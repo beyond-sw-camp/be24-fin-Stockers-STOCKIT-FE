@@ -11,6 +11,8 @@ import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue
 import WarehouseInboundView  from '@/views/warehouse/WarehouseInboundView.vue'
 import WarehouseOutboundView from '@/views/warehouse/WarehouseOutboundView.vue'
 import OperationStatusView from '@/views/hq/dashboard/OperationStatusView.vue'
+import InventoryRiskView from '@/views/hq/dashboard/InventoryRiskView.vue'
+import InboundOutboundFlowView from '@/views/hq/dashboard/InboundOutboundFlowView.vue'
 import HqInventoryStatusView from '@/views/hq/HqInventoryStatusView.vue'
 import HqOrderManagementView from '@/views/hq/HqOrderManagementView.vue'
 import HqProductManagementView from '@/views/hq/HqProductManagementView.vue'
@@ -23,6 +25,8 @@ const router = createRouter({
     { path: '/login', name: 'login', component: LoginView, meta: { requiresAuth: false } },
 
     { path: '/hq/dashboard', name: 'hq-dashboard', component: OperationStatusView,       meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/dashboard/inventory-risk', name: 'hq-dashboard-inventory-risk', component: InventoryRiskView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/dashboard/flow', name: 'hq-dashboard-flow', component: InboundOutboundFlowView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
