@@ -1,8 +1,18 @@
 <script setup>
 import { computed, h, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppLayout from '@/components/AppLayout.vue'
+import { roleMenus } from '@/config/roleMenus.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
+const auth = useAuthStore()
+const hqMenus = roleMenus.hq
+
+function handleLogout() {
+  auth.logout()
+  router.push('/login')
+}
 
 const brandColor = '#004D3C'
 const brandColorLight = '#E6F2F0'
@@ -12,14 +22,14 @@ const activeSideMenu = ref('카테고리 관리')
 const selectedProduct = ref(null)
 const selectedCategory = ref(null)
 
-const topMenus = ['대시보드', '재고 관리', '발주 관리', '제품 관리', '입/출고 관리', '인프라 관리', '정산/통계', '시스템']
+const topMenus = ['대시보드', '재고 관리', '발주 관리', '제품 관리', '인프라 관리', '정산/통계']
 const routeMap = {
-  대시보드: '/',
-  '재고 관리': '/inventory',
-  '발주 관리': '/orders',
-  '제품 관리': '/products',
-  '인프라 관리': '/infrastructure',
-  '정산/통계': '/analytics',
+  대시보드: '/hq/dashboard',
+  '재고 관리': '/hq/inventory',
+  '발주 관리': '/hq/orders',
+  '제품 관리': '/hq/products',
+  '인프라 관리': '/hq/infrastructure',
+  '정산/통계': '/hq/analytics',
 }
 
 const productSideMenus = [
@@ -188,76 +198,15 @@ const iconMap = {
 </script>
 
 <template>
-  <div class="erp-page">
-    <header class="topbar">
-      <div class="topbar-left">
-        <div class="brand">
-          <div class="brand-mark inverse">S</div>
-          <span class="brand-name inverse">StockIt ERP</span>
-        </div>
-
-        <nav class="top-nav">
-          <button
-            v-for="menu in topMenus"
-            :key="menu"
-            type="button"
-            class="top-nav-button"
-            :class="{ active: activeTopMenu === menu }"
-            @click="handleTopMenuClick(menu)"
-          >
-            {{ menu }}
-          </button>
-        </nav>
-      </div>
-
-      <div class="topbar-right">
-        <div class="topbar-actions">
-          <button type="button" class="icon-button"><BellIcon :size="16" /></button>
-          <button type="button" class="user-card">
-            <span class="user-avatar">KS</span>
-            <span class="user-name">김사라 마스터</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <div class="layout-shell">
-      <aside class="sidebar">
-        <div class="sidebar-head">
-          <p class="sidebar-caption">Master Data</p>
-          <p class="sidebar-title">{{ activeTopMenu }}</p>
-        </div>
-        <nav class="side-nav">
-          <button
-            v-for="item in productSideMenus"
-            :key="item.label"
-            type="button"
-            class="side-nav-button"
-            :class="{ active: activeSideMenu === item.label }"
-            :style="
-              activeSideMenu === item.label
-                ? { backgroundColor: brandColorLight, borderColor: brandColor, color: brandColor }
-                : {}
-            "
-            @click="activeSideMenu = item.label"
-          >
-            <div class="side-nav-main">
-              <component :is="iconMap[item.icon]" :size="14" />
-              <span>{{ item.label }}</span>
-            </div>
-            <span class="side-nav-id">{{ item.id }}</span>
-          </button>
-        </nav>
-
-        <div class="sidebar-footer">
-          <div class="sidebar-footer-line">
-            <InfoIcon :size="12" />
-            <span>데이터 일관성 검증 완료</span>
-          </div>
-        </div>
-      </aside>
-
-      <main class="content products-content">
+  <AppLayout
+    :active-top-menu="activeTopMenu"
+    :top-menus="hqMenus"
+    :side-menus="productSideMenus"
+    v-model:active-side-menu="activeSideMenu"
+    show-system-card
+    @logout="handleLogout"
+  >
+    <div class="products-content">
         <section class="panel action-bar">
           <div class="action-left">
             <label class="search-box wide-search">
@@ -553,9 +502,8 @@ const iconMap = {
           </aside>
           </template>
         </section>
-      </main>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>

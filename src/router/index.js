@@ -20,19 +20,14 @@ import HqSettlementStatisticsView from '@/views/hq/HqSettlementStatisticsView.vu
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // {
-    //   path: '/',
-    //   name: 'home',
-    //   component: ErpDashboardView,
-    // },
     { path: '/login', name: 'login', component: LoginView, meta: { requiresAuth: false } },
 
     { path: '/hq/dashboard', name: 'hq-dashboard', component: HqErpDashboardView,       meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
 
     { path: '/store/pos',       name: 'store-pos',       component: StorePosView,       meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders',    name: 'store-orders',    component: StoreOrdersView,    meta: { requiresAuth: true, role: 'store' } },

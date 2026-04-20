@@ -1,8 +1,11 @@
 export const roleMenus = {
   hq: [
-    { label: '대시보드',  path: '/hq/dashboard', icon: 'layout'    },
-    { label: '재고 현황', path: '/hq/inventory',  icon: 'warehouse' },
-    { label: '발주 관리', path: '/hq/orders',     icon: 'truck'     },
+    { label: '대시보드',  path: '/hq/dashboard',      icon: 'layout'    },
+    { label: '재고 관리', path: '/hq/inventory',      icon: 'warehouse' },
+    { label: '발주 관리', path: '/hq/orders',         icon: 'truck'     },
+    { label: '제품 관리', path: '/hq/products',       icon: 'file'      },
+    { label: '인프라 관리', path: '/hq/infrastructure', icon: 'store'     },
+    { label: '정산/통계', path: '/hq/analytics',      icon: 'chart'     },
   ],
   store: [
     { label: 'POS / 판매',   path: '/store/pos',       icon: 'store'     },

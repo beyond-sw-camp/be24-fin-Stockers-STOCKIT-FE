@@ -1,8 +1,18 @@
 <script setup>
 import { computed, h, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppLayout from '@/components/AppLayout.vue'
+import { roleMenus } from '@/config/roleMenus.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
+const auth = useAuthStore()
+const hqMenus = roleMenus.hq
+
+function handleLogout() {
+  auth.logout()
+  router.push('/login')
+}
 
 const brandColor = '#004D3C'
 const brandColorLight = '#E6F2F0'
@@ -11,14 +21,14 @@ const activeTopMenu = computed(() => '정산/통계')
 const activeSideMenu = ref('통합 KPI 대시보드')
 const selectedForecastRow = ref(null)
 
-const topMenus = ['대시보드', '재고 관리', '발주 관리', '제품 관리', '입/출고 관리', '인프라 관리', '정산/통계', '시스템']
+const topMenus = ['대시보드', '재고 관리', '발주 관리', '제품 관리', '인프라 관리', '정산/통계']
 const routeMap = {
-  대시보드: '/',
-  '재고 관리': '/inventory',
-  '발주 관리': '/orders',
-  '제품 관리': '/products',
-  '인프라 관리': '/infrastructure',
-  '정산/통계': '/analytics',
+  대시보드: '/hq/dashboard',
+  '재고 관리': '/hq/inventory',
+  '발주 관리': '/hq/orders',
+  '제품 관리': '/hq/products',
+  '인프라 관리': '/hq/infrastructure',
+  '정산/통계': '/hq/analytics',
 }
 
 const sideMenus = [
@@ -349,70 +359,15 @@ const iconMap = {
 </script>
 
 <template>
-  <div class="erp-page">
-    <header class="topbar">
-      <div class="topbar-left">
-        <div class="brand">
-          <div class="brand-mark inverse">S</div>
-          <span class="brand-name inverse">StockIt ERP</span>
-        </div>
-
-        <nav class="top-nav">
-          <button
-            v-for="menu in topMenus"
-            :key="menu"
-            type="button"
-            class="top-nav-button"
-            :class="{ active: activeTopMenu === menu }"
-            @click="handleTopMenuClick(menu)"
-          >
-            {{ menu }}
-          </button>
-        </nav>
-      </div>
-
-      <div class="topbar-right">
-        <div class="topbar-actions">
-          <button type="button" class="icon-button"><BellIcon :size="16" /></button>
-          <button type="button" class="user-card">
-            <span class="user-avatar">KS</span>
-            <span class="user-name">김사라 마스터</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <div class="layout-shell">
-      <aside class="sidebar">
-        <div class="sidebar-head">
-          <div>
-            <p class="sidebar-caption">Analytics</p>
-            <p class="sidebar-title">{{ activeTopMenu }}</p>
-          </div>
-        </div>
-        <nav class="side-nav">
-          <button
-            v-for="item in sideMenus"
-            :key="item.label"
-            type="button"
-            class="side-nav-button"
-            :style="
-              activeSideMenu === item.label
-                ? { backgroundColor: brandColorLight, borderColor: brandColor, color: brandColor }
-                : {}
-            "
-            @click="handleSideMenuClick(item.label)"
-          >
-            <div class="side-nav-main">
-              <component :is="iconMap[item.icon]" :size="14" />
-              <span>{{ item.label }}</span>
-            </div>
-            <span class="side-nav-id">{{ item.id }}</span>
-          </button>
-        </nav>
-      </aside>
-
-      <main class="content analytics-content">
+  <AppLayout
+    :active-top-menu="activeTopMenu"
+    :top-menus="hqMenus"
+    :side-menus="sideMenus"
+    v-model:active-side-menu="activeSideMenu"
+    show-system-card
+    @logout="handleLogout"
+  >
+    <div class="analytics-content">
         <section class="panel filter-bar">
           <div class="filter-left">
             <div class="filter-item">
@@ -982,9 +937,8 @@ const iconMap = {
             <p>좌측 메뉴 구조와 상단 필터 체계는 연결해둔 상태이며, 현재는 통합 KPI 대시보드만 우선 구현되어 있습니다.</p>
           </div>
         </section>
-      </main>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <style scoped>
