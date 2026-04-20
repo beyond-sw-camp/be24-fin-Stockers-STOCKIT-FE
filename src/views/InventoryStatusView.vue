@@ -10,14 +10,17 @@ const activeSideMenu = ref('전사 재고 집계')
 const selectedItem = ref(null)
 const searchTerm = ref('')
 
-const topMenus = ['대시보드', '재고 현황', '발주 관리', '입출고 관리', '정산/통계', '시스템']
+const topMenus = ['대시보드', '재고 관리', '발주 관리', '제품 관리', '입/출고 관리', '인프라 관리', '정산/통계', '시스템']
 const routeMap = {
   대시보드: '/',
-  '재고 현황': '/inventory',
+  '재고 관리': '/inventory',
   '발주 관리': '/orders',
+  '제품 관리': '/products',
+  '인프라 관리': '/infrastructure',
+  '정산/통계': '/analytics',
 }
 
-const activeTopMenu = computed(() => '재고 현황')
+const activeTopMenu = computed(() => '재고 관리')
 
 const sideMenus = [
   { label: '전사 재고 집계', icon: 'layout' },
@@ -540,13 +543,7 @@ const iconMap = {
   min-height: 100vh;
   background: #f3f4f6;
   color: #111827;
-  font-family:
-    'SFMono-Regular',
-    'SF Mono',
-    'Roboto Mono',
-    'Consolas',
-    'Liberation Mono',
-    monospace;
+  font-family: inherit;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }
@@ -631,7 +628,8 @@ const iconMap = {
 }
 
 .top-nav {
-  gap: 4px;
+  gap: 0;
+  height: 100%;
 }
 
 .top-nav-button,
@@ -651,10 +649,10 @@ const iconMap = {
 
 .top-nav-button {
   height: 48px;
-  padding: 0 16px;
+  padding: 0 14px;
   border-bottom: 2px solid transparent;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
 }
 
