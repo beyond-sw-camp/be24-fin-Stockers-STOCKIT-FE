@@ -28,6 +28,7 @@ const router = createRouter({
     { path: '/hq/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/vendors', name: 'hq-vendors', component: () => import('@/views/hq/HqVendorManagementView.vue'), meta: { requiresAuth: true, role: 'hq' } },
 
     { path: '/store/pos',       name: 'store-pos',       component: StorePosView,       meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders',    name: 'store-orders',    component: StoreOrdersView,    meta: { requiresAuth: true, role: 'store' } },

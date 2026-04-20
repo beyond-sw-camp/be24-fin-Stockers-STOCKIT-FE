@@ -38,6 +38,7 @@ const sideMenus = [
   { label: '매장별 발주 통계', icon: 'chart' },
   { label: '거래처별 매칭 현황', icon: 'truck' },
   { label: '발주 정책 설정', icon: 'settings' },
+  { label: '거래처 관리', path: '/hq/vendors', icon: 'briefcase' },
 ]
 
 const statusTabs = [
