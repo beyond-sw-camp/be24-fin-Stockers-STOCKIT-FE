@@ -22,6 +22,7 @@ import HqOrderManagementView from '@/views/hq/HqOrderManagementView.vue'
 import HqProductManagementView from '@/views/hq/HqProductManagementView.vue'
 import HqInfrastructureManagementView from '@/views/hq/HqInfrastructureManagementView.vue'
 import HqSettlementStatisticsView from '@/views/hq/HqSettlementStatisticsView.vue'
+import AccountListView from '@/views/hq/account/AccountListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,11 +36,13 @@ const router = createRouter({
     { path: '/hq/dashboard/alerts', name: 'hq-dashboard-alerts', component: AlertCenterView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/dashboard/transactions', name: 'hq-dashboard-transactions', component: AllTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/dashboard/flow/all', name: 'hq-dashboard-flow-all', component: AllFlowTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/account/accountlist', name: 'hq-account-list', component: AccountListView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
+
 
     { path: '/store/pos',       name: 'store-pos',       component: StorePosView,       meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders',    name: 'store-orders',    component: StoreOrdersView,    meta: { requiresAuth: true, role: 'store' } },
