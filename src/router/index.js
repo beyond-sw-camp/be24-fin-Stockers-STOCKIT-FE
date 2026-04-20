@@ -13,10 +13,43 @@ import StoreInboundView      from '@/views/store/StoreInboundView.vue'
 import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue'
 import WarehouseInboundView  from '@/views/warehouse/WarehouseInboundView.vue'
 import WarehouseOutboundView from '@/views/warehouse/WarehouseOutboundView.vue'
+import ProductManagementView from '../views/ProductManagementView.vue'
+import InfrastructureManagementView from '../views/InfrastructureManagementView.vue'
+import SettlementStatisticsView from '../views/SettlementStatisticsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: ErpDashboardView,
+    },
+    {
+      path: '/inventory',
+      name: 'inventory',
+      component: InventoryStatusView,
+    },
+    {
+      path: '/orders',
+      name: 'orders',
+      component: OrderManagementView,
+    },
+    {
+      path: '/products',
+      name: 'products',
+      component: ProductManagementView,
+    },
+    {
+      path: '/infrastructure',
+      name: 'infrastructure',
+      component: InfrastructureManagementView,
+    },
+    {
+      path: '/analytics',
+      name: 'analytics',
+      component: SettlementStatisticsView,
+    },
     { path: '/login', name: 'login', component: LoginView, meta: { requiresAuth: false } },
 
     { path: '/hq/dashboard', name: 'hq-dashboard', component: ErpDashboardView,       meta: { requiresAuth: true, role: 'hq' } },
