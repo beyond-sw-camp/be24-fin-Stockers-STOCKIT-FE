@@ -5,8 +5,6 @@ import {
   AlertCircle,
   ArrowRight,
   Clock3,
-  Download,
-  Filter,
   ShieldAlert,
   TriangleAlert,
   Warehouse,
@@ -90,16 +88,6 @@ function handleLogout() {
           </span>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Filter :size="14" />
-            필터
-          </button>
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Download :size="14" />
-            CSV
-          </button>
-        </div>
       </section>
 
       <section class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">

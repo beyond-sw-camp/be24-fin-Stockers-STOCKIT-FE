@@ -4,8 +4,6 @@ import { useRouter } from 'vue-router'
 import {
   ArrowRightLeft,
   Clock3,
-  Download,
-  Filter,
   PackageCheck,
   Truck,
 } from 'lucide-vue-next'
@@ -67,6 +65,10 @@ function handleLogout() {
   auth.logout()
   router.push('/login')
 }
+
+function goToAllFlowTransactions() {
+  router.push('/hq/dashboard/flow/all')
+}
 </script>
 
 <template>
@@ -92,16 +94,6 @@ function handleLogout() {
           </span>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Filter :size="14" />
-            필터
-          </button>
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Download :size="14" />
-            CSV
-          </button>
-        </div>
       </section>
 
       <section class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -197,7 +189,7 @@ function handleLogout() {
             <h3 class="text-sm font-medium text-gray-800">최근 입출고 로그</h3>
             <span class="bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">LIVE</span>
           </div>
-          <button type="button" class="text-xs font-semibold text-[#1f4b3a] hover:underline">전체 흐름 조회</button>
+          <button type="button" class="text-xs font-semibold text-[#1f4b3a] hover:underline" @click="goToAllFlowTransactions">전체 입출고 조회</button>
         </div>
         <div class="overflow-auto">
           <table class="w-full min-w-[800px] text-[13px]">

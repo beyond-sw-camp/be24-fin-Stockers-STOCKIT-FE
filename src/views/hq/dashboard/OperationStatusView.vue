@@ -5,10 +5,7 @@ import {
   AlertCircle,
   BarChart3,
   Clock,
-  Download,
-  Filter,
   Grid2X2,
-  PlusCircle,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
@@ -60,6 +57,14 @@ function handleLogout() {
   auth.logout()
   router.push('/login')
 }
+
+function goToAlertCenter() {
+  router.push('/hq/dashboard/alerts')
+}
+
+function goToTransactions() {
+  router.push('/hq/dashboard/transactions')
+}
 </script>
 
 <template>
@@ -84,17 +89,6 @@ function handleLogout() {
               <Clock :size="12" /> 실시간
             </span>
           </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Filter :size="14" /> 필터
-          </button>
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-gray-300 bg-white px-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50">
-            <Download :size="14" /> CSV
-          </button>
-          <button type="button" class="inline-flex h-8 items-center gap-1 border border-[#1f4b3a] bg-[#1f4b3a] px-2.5 text-[12px] font-semibold text-white hover:bg-[#17392c]">
-            <PlusCircle :size="14" /> 긴급 재고 생성
-          </button>
         </div>
       </section>
 
@@ -134,20 +128,29 @@ function handleLogout() {
             </div>
           </div>
           <div class="px-3 py-3">
-            <div
-              class="flex items-end border-b border-l border-gray-200"
-              style="height: 220px; padding: 10px 6px 16px 4px;"
-            >
+            <div class="flex gap-2">
+              <div class="flex h-[220px] w-8 shrink-0 flex-col justify-between pb-4 pt-2 text-right text-[10px] font-medium text-gray-400">
+                <span>100</span>
+                <span>75</span>
+                <span>50</span>
+                <span>25</span>
+                <span>0</span>
+              </div>
               <div
-                v-for="(height, index) in chartHeights"
-                :key="index"
-                class="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                class="flex flex-1 items-end border-b border-l border-gray-200"
+                style="height: 220px; padding: 10px 6px 16px 4px;"
               >
-                <div class="flex h-full w-full items-end justify-center gap-1">
-                  <div class="w-4.5 rounded-sm bg-[#1f4b3a]" :style="{ height: `${height}%` }" />
-                  <div class="w-4.5 rounded-sm bg-gray-200" :style="{ height: `${height * 0.7}%` }" />
+                <div
+                  v-for="(height, index) in chartHeights"
+                  :key="index"
+                  class="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                >
+                  <div class="flex h-full w-full items-end justify-center gap-1">
+                    <div class="w-4.5 rounded-sm bg-[#1f4b3a]" :style="{ height: `${height}%` }" />
+                    <div class="w-4.5 rounded-sm bg-gray-200" :style="{ height: `${height * 0.7}%` }" />
+                  </div>
+                  <span class="text-[11px] font-medium text-gray-400">{{ 10 + index }}일</span>
                 </div>
-                <span class="text-[11px] font-medium text-gray-400">{{ 10 + index }}일</span>
               </div>
             </div>
           </div>
@@ -170,8 +173,8 @@ function handleLogout() {
               <span class="mt-1 block text-[11px] text-gray-400">{{ alert.type }} · {{ alert.time }}</span>
             </button>
           </div>
-          <button type="button" class="border-t border-gray-200 py-2.5 text-[12px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800">
-            관제 센터 바로가기
+          <button type="button" class="border-t border-gray-200 py-2.5 text-[12px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800" @click="goToAlertCenter">
+            알림 센터 바로가기
           </button>
         </article>
       </section>
@@ -182,7 +185,7 @@ function handleLogout() {
             <h3 class="text-sm font-medium text-gray-800">최근 물류 트랜잭션</h3>
             <span class="bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">LIVE</span>
           </div>
-          <button type="button" class="text-xs font-semibold text-[#1f4b3a] hover:underline">전체 트랜잭션 조회</button>
+          <button type="button" class="text-xs font-semibold text-[#1f4b3a] hover:underline" @click="goToTransactions">전체 트랜잭션 조회</button>
         </div>
         <div class="overflow-auto">
           <table class="w-full min-w-[800px] text-[13px]">
