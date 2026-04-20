@@ -74,7 +74,7 @@ function handleLogout() {
           v-model="searchTerm"
           type="text"
           placeholder="제품명 검색..."
-          class="w-56 px-3 py-1.5 border border-gray-300 text-xs font-mono bg-white outline-none focus:border-[#004D3C] transition-colors"
+          class="w-56 px-3 py-1.5 border border-gray-300 text-xs bg-white outline-none focus:border-[#004D3C] transition-colors"
         />
       </div>
 
@@ -96,7 +96,7 @@ function handleLogout() {
 
       <!-- 제품 테이블 -->
       <div class="bg-white border border-gray-200 overflow-hidden">
-        <table class="w-full text-xs font-mono">
+        <table class="w-full text-xs">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-2.5 text-left font-black text-gray-500 uppercase tracking-wider w-24">카테고리</th>
@@ -184,7 +184,7 @@ function handleLogout() {
       </div>
 
       <!-- 하단 요약 -->
-      <div class="flex items-center justify-between text-xs text-gray-400 font-mono">
+      <div class="flex items-center justify-between text-xs text-gray-400">
         <span>총 {{ filteredProducts.length }}개 제품</span>
         <span>품절 {{ filteredProducts.filter(p => inventory.stockStatus(p) === 'out').length }}개</span>
       </div>

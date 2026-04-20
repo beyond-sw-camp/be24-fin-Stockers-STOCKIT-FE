@@ -239,13 +239,7 @@ const iconMap = {
   min-height: 100vh;
   background: #f3f4f6;
   color: #111827;
-  font-family:
-    'SFMono-Regular',
-    'SF Mono',
-    'Roboto Mono',
-    'Consolas',
-    'Liberation Mono',
-    monospace;
+  font-family: inherit;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
 }

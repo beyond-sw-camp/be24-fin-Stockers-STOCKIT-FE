@@ -28,7 +28,7 @@ function handleLogout() {
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#004D3C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17H5a2 2 0 0 1-2-2V7h11v10Z"/><path d="M14 17h-1V9h3l3 3v5h-1"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/></svg>
       </div>
       <h1 class="text-base font-black text-gray-800 uppercase tracking-wider">출고 관리</h1>
-      <p class="text-sm text-gray-400 font-mono">준비 중인 기능입니다.</p>
+      <p class="text-sm text-gray-400">준비 중인 기능입니다.</p>
     </div>
   </AppLayout>
 </template>

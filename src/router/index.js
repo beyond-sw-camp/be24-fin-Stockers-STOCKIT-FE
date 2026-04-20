@@ -2,9 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { roleHomeMap } from '@/config/roleMenus.js'
 
-import ErpDashboardView      from '@/views/hq/ErpDashboardView.vue'
-import InventoryStatusView   from '@/views/hq/InventoryStatusView.vue'
-import OrderManagementView   from '@/views/hq/OrderManagementView.vue'
 import LoginView             from '@/views/LoginView.vue'
 import StorePosView          from '@/views/store/StorePosView.vue'
 import StoreOrdersView       from '@/views/store/StoreOrdersView.vue'
@@ -13,48 +10,29 @@ import StoreInboundView      from '@/views/store/StoreInboundView.vue'
 import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue'
 import WarehouseInboundView  from '@/views/warehouse/WarehouseInboundView.vue'
 import WarehouseOutboundView from '@/views/warehouse/WarehouseOutboundView.vue'
-import ProductManagementView from '../views/ProductManagementView.vue'
-import InfrastructureManagementView from '../views/InfrastructureManagementView.vue'
-import SettlementStatisticsView from '../views/SettlementStatisticsView.vue'
+import HqErpDashboardView from '@/views/hq/HqErpDashboardView.vue'
+import HqInventoryStatusView from '@/views/hq/HqInventoryStatusView.vue'
+import HqOrderManagementView from '@/views/hq/HqOrderManagementView.vue'
+import HqProductManagementView from '@/views/hq/HqProductManagementView.vue'
+import HqInfrastructureManagementView from '@/views/hq/HqInfrastructureManagementView.vue'
+import HqSettlementStatisticsView from '@/views/hq/HqSettlementStatisticsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: ErpDashboardView,
-    },
-    {
-      path: '/inventory',
-      name: 'inventory',
-      component: InventoryStatusView,
-    },
-    {
-      path: '/orders',
-      name: 'orders',
-      component: OrderManagementView,
-    },
-    {
-      path: '/products',
-      name: 'products',
-      component: ProductManagementView,
-    },
-    {
-      path: '/infrastructure',
-      name: 'infrastructure',
-      component: InfrastructureManagementView,
-    },
-    {
-      path: '/analytics',
-      name: 'analytics',
-      component: SettlementStatisticsView,
-    },
+    // {
+    //   path: '/',
+    //   name: 'home',
+    //   component: ErpDashboardView,
+    // },
     { path: '/login', name: 'login', component: LoginView, meta: { requiresAuth: false } },
 
-    { path: '/hq/dashboard', name: 'hq-dashboard', component: ErpDashboardView,       meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/hq/inventory', name: 'hq-inventory', component: InventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
-    { path: '/hq/orders',    name: 'hq-orders',    component: OrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/dashboard', name: 'hq-dashboard', component: HqErpDashboardView,       meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
 
     { path: '/store/pos',       name: 'store-pos',       component: StorePosView,       meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders',    name: 'store-orders',    component: StoreOrdersView,    meta: { requiresAuth: true, role: 'store' } },
