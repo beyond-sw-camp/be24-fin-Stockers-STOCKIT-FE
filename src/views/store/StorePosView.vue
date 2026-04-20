@@ -29,6 +29,7 @@ function getQty(productId) {
   return quantities.value[productId] ?? 1
 }
 
+
 function setQty(productId, val) {
   const num = parseInt(val)
   quantities.value[productId] = isNaN(num) || num < 1 ? 1 : num
