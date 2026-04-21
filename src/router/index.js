@@ -28,6 +28,7 @@ import HqInfrastructureManagementView from '@/views/hq/HqInfrastructureManagemen
 import HqSettlementStatisticsView from '@/views/hq/HqSettlementStatisticsView.vue'
 import HqPurchaseOrderView from '@/views/hq/HqPurchaseOrderView.vue'
 import AccountListView from '@/views/hq/account/AccountListView.vue'
+import AccountApprovalView from '@/views/hq/account/AccountApprovalView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,6 +42,18 @@ const router = createRouter({
     { path: '/hq/dashboard/flow/all', name: 'hq-dashboard-flow-all', component: AllFlowTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/dashboard/alerts', name: 'hq-dashboard-alerts', component: AlertCenterView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/dashboard/transactions', name: 'hq-dashboard-transactions', component: AllTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
+
+    { path: '/hq/dashboard/flow/all', name: 'hq-dashboard-flow-all', component: AllFlowTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/account/accountlist', name: 'hq-account-list', component: AccountListView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/account/approval', name: 'hq-account-approval', component: AccountApprovalView, meta: { requiresAuth: true, role: 'hq' } },
+  
+  
+    { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/orders',    name: 'hq-orders',    component: HqOrderManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/products',    name: 'hq-products',    component: HqProductManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/infrastructure',    name: 'hq-infrastructure',    component: HqInfrastructureManagementView,    meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/analytics',    name: 'hq-analytics',    component: HqSettlementStatisticsView,    meta: { requiresAuth: true, role: 'hq' } },
+
 
     { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/orders', name: 'hq-orders', component: HqOrderManagementView, meta: { requiresAuth: true, role: 'hq' } },
