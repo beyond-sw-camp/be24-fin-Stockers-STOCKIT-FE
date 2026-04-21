@@ -173,21 +173,6 @@ function selectOrder(id) {
   poStore.selectOrder(id)
 }
 
-function handleApprove() {
-  if (!poStore.selectedOrder) return
-  poStore.approveOrder(poStore.selectedOrder.id)
-}
-
-function handleShipping() {
-  if (!poStore.selectedOrder) return
-  poStore.markShipping(poStore.selectedOrder.id)
-}
-
-function handleCompleted() {
-  if (!poStore.selectedOrder) return
-  poStore.markCompleted(poStore.selectedOrder.id)
-}
-
 function handleCancel() {
   if (!poStore.selectedOrder) return
   if (!confirm(`발주 ${poStore.selectedOrder.id}를 취소하시겠습니까?`)) return
@@ -482,15 +467,6 @@ const TrashIcon = IconBase([
   { tag: 'path', attrs: { d: 'M14 11v6' } },
 ])
 
-const TruckIcon = IconBase([
-  { tag: 'path', attrs: { d: 'M10 17H5a2 2 0 0 1-2-2V7h11v10Z' } },
-  { tag: 'path', attrs: { d: 'M14 17h-1V9h3l3 3v5h-1' } },
-  { tag: 'circle', attrs: { cx: '7.5', cy: '17.5', r: '1.5' } },
-  { tag: 'circle', attrs: { cx: '17.5', cy: '17.5', r: '1.5' } },
-])
-
-const CheckIcon = IconBase([{ tag: 'path', attrs: { d: 'm5 12 5 5 9-9' } }])
-
 const InfoIcon = IconBase([
   { tag: 'circle', attrs: { cx: '12', cy: '12', r: '9' } },
   { tag: 'path', attrs: { d: 'M12 10v6' } },
@@ -775,11 +751,11 @@ const UserIcon = IconBase([
             </section>
           </div>
 
-          <!-- 액션 버튼 (상태별 조건부) -->
+          <!-- 액션/안내 (상태별 조건부) -->
+          <!-- PENDING 단계에서만 본사 권한(수정/취소) 노출. 승인 이후 단계는 시스템 자동화(RQ-001/002) 및 창고관리자(PO-003/004) 영역이므로 조회만. -->
           <div class="space-y-2 px-4 pb-4">
-            <!-- PENDING: 수정 / 취소 / 승인 -->
             <template v-if="poStore.selectedOrder.status === 'PENDING'">
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   class="inline-flex items-center justify-center gap-1 border border-gray-400 bg-white px-2 py-2.5 text-[11px] font-black text-gray-700 hover:bg-gray-50"
@@ -796,47 +772,29 @@ const UserIcon = IconBase([
                   <XIcon :size="12" />
                   취소
                 </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center gap-1 border border-[#004D3C] bg-[#004D3C] px-2 py-2.5 text-[11px] font-black text-white hover:bg-[#1f4b3a]"
-                  @click="handleApprove"
-                >
-                  <CheckIcon :size="12" />
-                  승인
-                </button>
               </div>
+              <p class="text-center text-[11px] text-gray-400">
+                승인 후에는 창고 입고 검수 단계에서 처리됩니다.
+              </p>
             </template>
 
-            <!-- APPROVED: 배송 시작 -->
             <template v-else-if="poStore.selectedOrder.status === 'APPROVED'">
-              <button
-                type="button"
-                class="inline-flex w-full items-center justify-center gap-2 border border-blue-600 bg-blue-600 px-3 py-2.5 text-[11px] font-black text-white hover:bg-blue-700"
-                @click="handleShipping"
-              >
-                <TruckIcon :size="14" />
-                배송 시작
-              </button>
+              <p class="text-center text-xs text-gray-500">
+                승인 완료 · 창고 입고 대기 중
+              </p>
             </template>
 
-            <!-- SHIPPING: 입고 완료 -->
             <template v-else-if="poStore.selectedOrder.status === 'SHIPPING'">
-              <button
-                type="button"
-                class="inline-flex w-full items-center justify-center gap-2 border border-[#004D3C] bg-[#004D3C] px-3 py-2.5 text-[11px] font-black text-white hover:bg-[#1f4b3a]"
-                @click="handleCompleted"
-              >
-                <CheckIcon :size="14" />
-                입고 완료
-              </button>
+              <p class="text-center text-xs text-gray-500">
+                배송 중 · 창고 입고 검수 대기
+              </p>
             </template>
 
-            <!-- COMPLETED / REJECTED: 액션 없음 (안내 메시지) -->
             <template v-else>
               <p class="text-center text-xs text-gray-400">
                 {{
                   poStore.selectedOrder.status === 'COMPLETED'
-                    ? '처리 완료된 발주입니다.'
+                    ? '입고 완료된 발주입니다.'
                     : '취소된 발주입니다.'
                 }}
               </p>
