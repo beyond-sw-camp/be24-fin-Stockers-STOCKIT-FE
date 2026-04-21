@@ -17,14 +17,12 @@ function handleLogout() {
 }
 
 // --- 레이아웃 설정 ---
-const activeTopMenu = computed(() => '발주 관리')
+const activeTopMenu = computed(() => '주문/발주 관리')
 const activeSideMenu = ref('거래처 관리')
 
 const sideMenus = [
-  { label: '전사 발주 목록', icon: 'file', path: '/hq/orders' },
-  { label: '매장별 발주 통계', icon: 'chart', path: '/hq/orders' },
-  { label: '거래처별 매칭 현황', icon: 'truck' },
-  { label: '발주 정책 설정', icon: 'settings' },
+  { label: '매장 주문', icon: 'file', path: '/hq/orders' },
+  { label: '거래처 발주', icon: 'truck', path: '/hq/purchase-orders' },
   { label: '거래처 관리', icon: 'briefcase', path: '/hq/vendors' },
 ]
 
