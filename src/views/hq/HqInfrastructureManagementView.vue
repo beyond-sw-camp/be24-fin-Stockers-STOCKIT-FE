@@ -34,7 +34,7 @@ const topMenus = [
 
 const routeMap = {
   대시보드: '/hq/dashboard',
-  '재고 관리': '/hq/inventory',
+  '재고 관리': '/hq/inventory/company-wide',
   '발주 관리': '/hq/orders',
   '제품 관리': '/hq/products',
   '인프라 관리': '/hq/infrastructure',

@@ -23,7 +23,8 @@ import AlertCenterView from '@/views/hq/dashboard/AlertCenterView.vue'
 import AllTransactionsView from '@/views/hq/dashboard/AllTransactionsView.vue'
 import AllFlowTransactionsView from '@/views/hq/dashboard/AllFlowTransactionsView.vue'
 
-import HqInventoryStatusView from '@/views/hq/HqInventoryStatusView.vue'
+import HqCompanyWideInventoryView from '@/views/hq/inventory/HqCompanyWideInventoryView.vue'
+import HqWarehouseInventoryComparisonView from '@/views/hq/inventory/HqWarehouseInventoryComparisonView.vue'
 import HqOrderManagementView from '@/views/hq/HqOrderManagementView.vue'
 import HqProductManagementView from '@/views/hq/HqProductManagementView.vue'
 import HqInfrastructureManagementView from '@/views/hq/HqInfrastructureManagementView.vue'
@@ -52,7 +53,9 @@ const router = createRouter({
     { path: '/hq/dashboard/alerts', name: 'hq-dashboard-alerts', component: AlertCenterView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/dashboard/transactions', name: 'hq-dashboard-transactions', component: AllTransactionsView, meta: { requiresAuth: true, role: 'hq' } },
 
-    { path: '/hq/inventory', name: 'hq-inventory', component: HqInventoryStatusView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/inventory', redirect: { name: 'hq-inventory-company-wide' } },
+    { path: '/hq/inventory/company-wide', name: 'hq-inventory-company-wide', component: HqCompanyWideInventoryView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/inventory/warehouse-comparison', name: 'hq-inventory-warehouse-comparison', component: HqWarehouseInventoryComparisonView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/orders', name: 'hq-orders', component: HqOrderManagementView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/products', name: 'hq-products', component: HqProductManagementView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/infrastructure', name: 'hq-infrastructure', component: HqInfrastructureManagementView, meta: { requiresAuth: true, role: 'hq' } },
