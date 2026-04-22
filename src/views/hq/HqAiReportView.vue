@@ -65,7 +65,7 @@ function scrollToForecast() {
 
 function handleExecCardClick(card) {
   if (card.type === 'stockout_risk') {
-    router.push({ name: 'hq-inventory', query: { productId: card.productCode } })
+    router.push({ name: 'hq-inventory-company-wide', query: { productId: card.productCode } })
   } else if (card.type === 'dead_stock') {
     router.push({ name: 'hq-purchase-orders', query: { productId: card.productCode } })
   } else if (card.type === 'demand_surge') {

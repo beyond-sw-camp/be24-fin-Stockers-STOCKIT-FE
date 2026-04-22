@@ -13,14 +13,11 @@ export const roleMenus = {
     },
     {
       label: '재고 관리',
-      path: '/hq/inventory',
+      path: '/hq/inventory/company-wide',
       icon: 'warehouse',
       children: [
-        { label: '전사 재고 조회', path: '/hq/inventory' },
-        { label: '창고별 재고 현황' },
-        { label: '매장별 재고 현황' },
-        { label: '재고 실사 내역' },
-        { label: '재고 변동 이력' },
+        { label: '전사 재고 조회', path: '/hq/inventory/company-wide' },
+        { label: '창고별 재고 비교', path: '/hq/inventory/warehouse-comparison' },
       ],
     },
     {
