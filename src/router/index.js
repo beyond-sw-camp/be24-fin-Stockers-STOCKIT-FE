@@ -34,6 +34,7 @@ import HqVendorManagementView from '@/views/hq/HqVendorManagementView.vue'
 import HqCircularInventoryCandidateView from '@/views/hq/HqCircularInventoryCandidateView.vue'
 import HqCircularInventoryView from '@/views/hq/HqCircularInventoryView.vue'
 import HqAiReportView from '@/views/hq/HqAiReportView.vue'
+import EsgDashBoardView from '@/views/hq/esg/EsgDashBoardView.vue'
 import AccountListView from '@/views/hq/account/AccountListView.vue'
 import AccountApprovalView from '@/views/hq/account/AccountApprovalView.vue'
 
@@ -71,6 +72,7 @@ const router = createRouter({
     { path: '/hq/account/accountlist', name: 'hq-account-list', component: AccountListView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/account/approval', name: 'hq-account-approval', component: AccountApprovalView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/ai-report', name: 'hq-ai-report', component: HqAiReportView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/esg', name: 'hq-esg', component: EsgDashBoardView, meta: { requiresAuth: true, role: 'hq' } },
 
     { path: '/store/pos', name: 'store-pos', component: StorePosView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders', name: 'store-orders', component: StoreOrdersView, meta: { requiresAuth: true, role: 'store' } },
