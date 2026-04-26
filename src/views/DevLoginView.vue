@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Eye, EyeOff, Hash, LockKeyhole, ShieldCheck } from 'lucide-vue-next'
+import { Eye, EyeOff, Hash, Leaf, LockKeyhole, ShieldCheck } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
@@ -32,29 +32,6 @@ async function handleSubmit() {
   }
 }
 
-const notices = [
-  {
-    tag: '점검',
-    tagStyle: 'bg-amber-100 text-amber-700',
-    title: '[필독] 4월 27일 (일) 시스템 정기 점검',
-    desc: '오전 02:00 ~ 06:00 서비스 일시 중단 예정입니다.',
-    date: '2026.04.22',
-  },
-  {
-    tag: '업데이트',
-    tagStyle: 'bg-blue-100 text-blue-700',
-    title: 'v2.4.1 배포 완료 — 재고 경보 기능 개선',
-    desc: '안전재고 임계치 알림 정확도가 향상되었습니다.',
-    date: '2026.04.18',
-  },
-  {
-    tag: '보안',
-    tagStyle: 'bg-red-100 text-red-600',
-    title: '비밀번호 90일 주기 변경 정책 시행',
-    desc: '미변경 계정은 다음 로그인 시 강제 변경이 요구됩니다.',
-    date: '2026.04.01',
-  },
-]
 </script>
 
 <template>
@@ -66,51 +43,41 @@ const notices = [
       <!-- 왼쪽 패널 -->
       <div class="flex min-h-[340px] flex-col bg-[#004D3C] p-8 text-white md:min-h-[600px] md:p-10">
 
-        <!-- 브랜드 -->
-        <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center border border-white/40 bg-white text-[18px] font-black text-[#004D3C]">
-            V
-          </div>
-          <div>
-            <p class="text-[13px] font-black uppercase tracking-[0.12em] text-white"></p>
-            <p class="text-[10px] text-white/50">v2.4.1</p>
+        <!-- 상단 좌측: ESG 배지 -->
+        <div class="flex flex-col items-start">
+          <div class="inline-flex items-center gap-1.5 border border-white/40 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+            <Leaf :size="12" />
+            ESG Inside
           </div>
         </div>
 
-        <!-- 대형 타이틀 -->
-        <div class="my-7">
-          <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/30">Enterprise Resource Planning</p>
-          <div class="mt-2 inline-block">
-            <h1 class="text-[52px] font-black leading-none tracking-tight text-white md:text-[60px]">
-              Stock<span class="text-white/40">It</span>
-            </h1>
-            <div class="mt-3 h-[2px] w-full bg-white/30" />
-          </div>
-        </div>
+        <!-- 브랜드 영역 -->
+        <div class="flex flex-1 flex-col justify-center">
+          <!-- 타이틀 -->
+          <h1 class="text-[68px] font-black leading-[0.9] tracking-[-0.04em] text-white md:text-[84px]">
+            Stock<span class="text-white/45">It</span>
+          </h1>
 
-        <!-- 공지사항 -->
-        <div class="flex-1 pt-4">
-          <p class="mb-4 text-[11px] font-black uppercase tracking-[0.16em] text-white/50">공지사항</p>
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="notice in notices"
-              :key="notice.title"
-              class="border border-white/10 bg-white/5 px-4 py-3"
-            >
-              <div class="mb-1.5 flex items-center gap-2">
-                <span class="rounded px-1.5 py-0.5 text-[10px] font-bold" :class="notice.tagStyle">
-                  {{ notice.tag }}
-                </span>
-                <span class="text-[10px] text-white/40">{{ notice.date }}</span>
-              </div>
-              <p class="text-[13px] font-semibold leading-snug text-white">{{ notice.title }}</p>
-              <p class="mt-1 text-[11px] leading-relaxed text-white/55">{{ notice.desc }}</p>
-            </div>
+          <!-- 슬로건: 짧은 액센트 + 위계 있는 한 줄 -->
+          <div class="mt-7 flex items-center gap-3">
+            <span class="h-px w-8 shrink-0 bg-white/60" />
+            <p class="whitespace-nowrap text-[13px] tracking-wide md:text-[14px]">
+              <span class="font-light text-white/55">지속 가능한 SPA 브랜드를 위한</span>
+              <span class="ml-1.5 font-bold text-white"> 스마트 재고관리 시스템</span>
+            </p>
           </div>
         </div>
 
         <!-- 하단 -->
-        <p class="mt-7 text-[11px] text-white/30">© 2026 StockIT Corp. All rights reserved.</p>
+        <div class="mt-8 flex items-center justify-between gap-3 border-t border-white/10 pt-5">
+          <p class="text-[11px] text-white/30">© 2026 StockIT Corp. All rights reserved.</p>
+          <div class="flex items-center gap-2">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center border border-white/40 bg-white text-[16px] font-black text-[#004D3C]">
+              V
+            </div>
+            <p class="text-[10px] font-semibold text-white/60">v1.0</p>
+          </div>
+        </div>
       </div>
 
       <!-- 오른쪽 로그인 폼 -->
@@ -185,6 +152,14 @@ const notices = [
             :disabled="!canSubmit || loading"
           >
             {{ loading ? '로그인 중...' : '로그인' }}
+          </button>
+
+          <button
+            type="button"
+            class="min-h-[48px] border border-[#004D3C] bg-white text-[14px] font-black text-[#004D3C] transition hover:bg-[#eef7f4]"
+            @click="router.push('/signup')"
+          >
+            계정 신청
           </button>
 
         </form>
