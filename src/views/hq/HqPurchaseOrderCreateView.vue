@@ -1,6 +1,6 @@
 <script setup>
 import { computed, h, nextTick, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -8,11 +8,15 @@ import { useVendorStore } from '@/stores/vendor.js'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrder.js'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const vendor = useVendorStore()
 const poStore = usePurchaseOrderStore()
 
 const DRAFT_KEY = 'stockit:po-cart-draft'
+
+const isEditMode = computed(() => route.name === 'hq-purchase-order-edit')
+const editingOrderId = computed(() => route.params.id ?? null)
 
 // ─── 레이아웃 ────────────────────────────────────────────────────────────────
 const hqMenus = roleMenus.hq
@@ -142,6 +146,7 @@ function loadDraft() {
 }
 
 function saveDraft() {
+  if (isEditMode.value) return // edit 모드는 localStorage 영속화 안 함
   try {
     const payload = {
       warehouseId: selectedWarehouseId.value,
@@ -311,28 +316,74 @@ function confirmSubmitOrder() {
     subtotal: i.unitPrice * i.quantity,
   }))
 
-  const newOrder = poStore.createOrder({
-    warehouseId: selectedWarehouseId.value,
-    vendorId: cart.value[0].vendorId,
-    vendorName: cart.value[0].vendorName,
-    items,
-    memberId: auth.user?.memberId ?? 'MB-003',
-    memberName: auth.user?.name ?? '이선엽',
-  })
-
-  cart.value = []
-  clearDraftStorage()
-  poStore.selectOrder(newOrder.id)
-  triggerToast('발주가 요청되었습니다')
+  if (isEditMode.value) {
+    // 가드 재검증 — 다른 곳에서 상태 바뀌었을 수 있음
+    const order = poStore.purchaseOrders.find((o) => o.id === editingOrderId.value)
+    if (!order || order.status !== 'PENDING') {
+      triggerToast('상태가 변경되어 수정할 수 없습니다')
+      setTimeout(() => router.replace({ name: 'hq-purchase-orders' }), 900)
+      return
+    }
+    poStore.updateOrder(editingOrderId.value, {
+      warehouseId: selectedWarehouseId.value,
+      items,
+    })
+    poStore.selectOrder(editingOrderId.value)
+    triggerToast('발주가 수정되었습니다')
+  } else {
+    const newOrder = poStore.createOrder({
+      warehouseId: selectedWarehouseId.value,
+      vendorId: cart.value[0].vendorId,
+      vendorName: cart.value[0].vendorName,
+      items,
+      memberId: auth.user?.memberId ?? 'MB-003',
+      memberName: auth.user?.name ?? '이선엽',
+    })
+    cart.value = []
+    clearDraftStorage()
+    poStore.selectOrder(newOrder.id)
+    triggerToast('발주가 요청되었습니다')
+  }
 
   setTimeout(() => {
     router.push({ name: 'hq-purchase-orders' })
   }, 900)
 }
 
+// ─── 수정 모드 초기화 ────────────────────────────────────────────────────────
+function initEditMode() {
+  const id = editingOrderId.value
+  const order = poStore.purchaseOrders.find((o) => o.id === id)
+  if (!order) {
+    triggerToast('발주를 찾을 수 없습니다')
+    setTimeout(() => router.replace({ name: 'hq-purchase-orders' }), 900)
+    return
+  }
+  if (order.status !== 'PENDING') {
+    triggerToast('승인 대기 상태의 발주만 수정할 수 있습니다')
+    setTimeout(() => router.replace({ name: 'hq-purchase-orders' }), 900)
+    return
+  }
+  selectedWarehouseId.value = order.warehouseId
+  vendorFilter.value = order.vendorId // 거래처 잠금
+  cart.value = order.items.map((i) => ({
+    productId: i.productId,
+    productCode: i.productCode,
+    productName: i.productName,
+    vendorId: order.vendorId,
+    vendorName: order.vendorName,
+    unitPrice: i.unitPrice,
+    quantity: i.quantity,
+  }))
+}
+
 // ─── mounted ────────────────────────────────────────────────────────────────
 onMounted(() => {
-  loadDraft()
+  if (isEditMode.value) {
+    initEditMode()
+  } else {
+    loadDraft()
+  }
 })
 
 // ─── 아이콘 ──────────────────────────────────────────────────────────────────
@@ -430,7 +481,13 @@ const AlertTriangleIcon = IconBase([
         </div>
 
         <span
-          v-if="cart.length > 0"
+          v-if="isEditMode"
+          class="ml-auto inline-flex items-center gap-1 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700"
+        >
+          수정 중: {{ editingOrderId }} · {{ currentCartVendorName }}
+        </span>
+        <span
+          v-else-if="cart.length > 0"
           class="ml-auto inline-flex items-center gap-1 bg-[#E6F2F0] px-2 py-1 text-[10px] font-bold text-[#004D3C]"
         >
           임시 저장된 품목 {{ cart.length }}건
@@ -461,7 +518,8 @@ const AlertTriangleIcon = IconBase([
             </label>
             <select
               v-model="vendorFilter"
-              class="border border-gray-300 bg-white px-3 py-1.5 text-xs outline-none focus:border-[#004D3C]"
+              :disabled="isEditMode"
+              class="border border-gray-300 bg-white px-3 py-1.5 text-xs outline-none focus:border-[#004D3C] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
             >
               <option value="all">전체 거래처</option>
               <option v-for="v in vendorOptions" :key="v.id" :value="v.id">
@@ -651,7 +709,7 @@ const AlertTriangleIcon = IconBase([
                 :disabled="!canSubmit"
                 @click="openSubmitConfirm"
               >
-                발주 요청
+                {{ isEditMode ? '수정 저장' : '발주 요청' }}
               </button>
             </div>
           </div>
@@ -768,7 +826,7 @@ const AlertTriangleIcon = IconBase([
       </div>
     </div>
 
-    <!-- ───────── 모달: 발주 요청 최종 확인 (signature, 비파괴) ───────── -->
+    <!-- ───────── 모달: 발주 요청/수정 최종 확인 (signature, 비파괴) ───────── -->
     <div
       v-if="showSubmitConfirm"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -776,7 +834,7 @@ const AlertTriangleIcon = IconBase([
     >
       <div class="w-full max-w-sm overflow-hidden bg-white shadow-xl">
         <div class="bg-[#004D3C] px-5 py-3 text-white">
-          <h2 class="text-sm font-black">발주 요청 확인</h2>
+          <h2 class="text-sm font-black">{{ isEditMode ? '발주 수정 확인' : '발주 요청 확인' }}</h2>
         </div>
         <div class="space-y-2 p-5 text-xs text-gray-700">
           <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">발주서 요약</p>
@@ -799,8 +857,13 @@ const AlertTriangleIcon = IconBase([
             </div>
           </dl>
           <p class="pt-2 text-[11px] leading-relaxed text-gray-500">
-            이 내용으로 거래처에 발주 요청합니다.
-            요청 후 거래처 응답 받기 전까지 [취소] 가능합니다.
+            <template v-if="isEditMode">
+              이 내용으로 발주를 수정합니다. 거래처 승인 전까지만 가능합니다.
+            </template>
+            <template v-else>
+              이 내용으로 거래처에 발주 요청합니다.
+              요청 후 거래처 응답 받기 전까지 [취소] 가능합니다.
+            </template>
           </p>
         </div>
         <div class="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3">
@@ -816,7 +879,7 @@ const AlertTriangleIcon = IconBase([
             class="border border-[#004D3C] bg-[#004D3C] px-4 py-2 text-xs font-black text-white hover:bg-[#1f4b3a]"
             @click="confirmSubmitOrder"
           >
-            발주 요청
+            {{ isEditMode ? '수정 저장' : '발주 요청' }}
           </button>
         </div>
       </div>

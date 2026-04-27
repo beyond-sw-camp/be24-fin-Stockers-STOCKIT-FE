@@ -26,136 +26,6 @@ function handleLogout() {
   router.push('/login')
 }
 
-// ─── 거래처/제품 더미 데이터 (vendor.js 미구현 상태 대비 내부 정의) ─────────
-const VENDORS = [
-  { id: 'VND-001', name: '(주)테크서플라이', status: 'active' },
-  { id: 'VND-002', name: '글로벌오피스(주)', status: 'active' },
-  { id: 'VND-003', name: '헬스케어솔루션(주)', status: 'active' },
-  { id: 'VND-004', name: '리빙플러스(주)', status: 'active' },
-  { id: 'VND-005', name: '스마트스토리지(주)', status: 'active' },
-]
-
-// 거래처별 계약 제품 (VENDOR_PRODUCT 기반)
-const VENDOR_PRODUCTS = [
-  {
-    id: 'VP-001-1',
-    vendorId: 'VND-001',
-    productId: 'PRD-001',
-    productCode: 'PRD-001',
-    productName: '고속 충전기 (C타입) 25W',
-    unitPrice: 15000,
-    status: 'active',
-  },
-  {
-    id: 'VP-001-2',
-    vendorId: 'VND-001',
-    productId: 'PRD-002',
-    productCode: 'PRD-002',
-    productName: '대용량 보조배터리 20000mAh',
-    unitPrice: 58000,
-    status: 'active',
-  },
-  {
-    id: 'VP-001-3',
-    vendorId: 'VND-001',
-    productId: 'PRD-003',
-    productCode: 'PRD-003',
-    productName: '무소음 무선 마우스',
-    unitPrice: 25000,
-    status: 'active',
-  },
-  {
-    id: 'VP-001-4',
-    vendorId: 'VND-001',
-    productId: 'PRD-006',
-    productCode: 'PRD-006',
-    productName: '기계식 키보드 (갈축)',
-    unitPrice: 60000,
-    status: 'active',
-  },
-  {
-    id: 'VP-002-1',
-    vendorId: 'VND-002',
-    productId: 'PRD-004',
-    productCode: 'PRD-004',
-    productName: 'A4 복사용지 80g (500매)',
-    unitPrice: 6500,
-    status: 'active',
-  },
-  {
-    id: 'VP-002-2',
-    vendorId: 'VND-002',
-    productId: 'PRD-005',
-    productCode: 'PRD-005',
-    productName: '더블클립 세트 (19mm)',
-    unitPrice: 2200,
-    status: 'active',
-  },
-  {
-    id: 'VP-002-3',
-    vendorId: 'VND-002',
-    productId: 'PRD-012',
-    productCode: 'PRD-012',
-    productName: '절전형 5구 멀티탭 (3m)',
-    unitPrice: 13000,
-    status: 'active',
-  },
-  {
-    id: 'VP-003-1',
-    vendorId: 'VND-003',
-    productId: 'PRD-007',
-    productCode: 'PRD-007',
-    productName: 'KF94 마스크 (50매입)',
-    unitPrice: 2500,
-    status: 'active',
-  },
-  {
-    id: 'VP-003-2',
-    vendorId: 'VND-003',
-    productId: 'PRD-008',
-    productCode: 'PRD-008',
-    productName: '휴대용 가글 (중) 250ml',
-    unitPrice: 1500,
-    status: 'active',
-  },
-  {
-    id: 'VP-004-1',
-    vendorId: 'VND-004',
-    productId: 'PRD-009',
-    productCode: 'PRD-009',
-    productName: '유리제 머그컵 350ml',
-    unitPrice: 8900,
-    status: 'active',
-  },
-  {
-    id: 'VP-004-2',
-    vendorId: 'VND-004',
-    productId: 'PRD-010',
-    productCode: 'PRD-010',
-    productName: '탁상용 미니 가습기',
-    unitPrice: 14000,
-    status: 'active',
-  },
-  {
-    id: 'VP-004-3',
-    vendorId: 'VND-004',
-    productId: 'PRD-013',
-    productCode: 'PRD-013',
-    productName: '종이컵 6.5온스 (1000개입)',
-    unitPrice: 20500,
-    status: 'active',
-  },
-  {
-    id: 'VP-005-1',
-    vendorId: 'VND-005',
-    productId: 'PRD-011',
-    productCode: 'PRD-011',
-    productName: '투명 박스 테이프 (48mm)',
-    unitPrice: 2200,
-    status: 'active',
-  },
-]
-
 // ─── 상태 탭 ────────────────────────────────────────────────────────────────
 const STATUS_TABS = [
   { label: '전체', key: '전체' },
@@ -251,115 +121,20 @@ function formatDate(iso) {
   return iso.replace('T', ' ').slice(0, 16)
 }
 
-// ─── 모달 상태 관리 ──────────────────────────────────────────────────────────
-// 발주 수정 모달 (신규 등록은 /hq/purchase-orders/new 페이지로 분리됨)
-const showOrderModal = ref(false)
-
-// 모달 폼 상태
-const modalWarehouseId = ref('')
-const modalVendorId = ref('')
-const modalProductSearch = ref('')
-const modalCart = ref([]) // [{ productId, productCode, productName, unitPrice, quantity, subtotal }]
-
-// 현재 거래처의 제품 목록 (검색 포함)
-const modalVendorProducts = computed(() => {
-  if (!modalVendorId.value) return []
-  return VENDOR_PRODUCTS.filter(
-    (vp) =>
-      vp.vendorId === modalVendorId.value &&
-      vp.status !== 'expired' &&
-      (modalProductSearch.value === '' ||
-        vp.productName.toLowerCase().includes(modalProductSearch.value.toLowerCase())),
-  )
-})
-
-const modalCartTotal = computed(() => modalCart.value.reduce((sum, item) => sum + item.subtotal, 0))
-
+// ─── 발주 작성/수정 페이지 라우팅 ──────────────────────────────────────────
 function goCreatePage() {
   router.push({ name: 'hq-purchase-order-new' })
 }
 
-function openEditModal() {
+function goEditPage() {
   const order = poStore.selectedOrder
   if (!order || order.status !== 'PENDING') return
-
-  modalWarehouseId.value = order.warehouseId
-  modalVendorId.value = order.vendorId
-  modalProductSearch.value = ''
-  // 기존 품목 장바구니에 주입
-  modalCart.value = order.items.map((item) => ({
-    id: item.id,
-    productId: item.productId,
-    productCode: item.productCode,
-    productName: item.productName,
-    unitPrice: item.unitPrice,
-    quantity: item.quantity,
-    subtotal: item.subtotal,
-  }))
-  showOrderModal.value = true
-}
-
-function closeOrderModal() {
-  showOrderModal.value = false
-}
-
-// 제품 장바구니 추가
-function addToCart(product) {
-  const existing = modalCart.value.find((item) => item.productId === product.productId)
-  if (existing) {
-    existing.quantity += 1
-    existing.subtotal = existing.quantity * existing.unitPrice
-  } else {
-    modalCart.value.push({
-      productId: product.productId,
-      productCode: product.productCode,
-      productName: product.productName,
-      unitPrice: product.unitPrice,
-      quantity: 1,
-      subtotal: product.unitPrice,
-    })
-  }
-}
-
-// 장바구니 수량 변경
-function updateCartQty(idx, qty) {
-  const num = parseInt(qty, 10)
-  if (isNaN(num) || num < 1) return
-  modalCart.value[idx].quantity = num
-  modalCart.value[idx].subtotal = num * modalCart.value[idx].unitPrice
-}
-
-// 장바구니 품목 삭제
-function removeCartItem(idx) {
-  modalCart.value.splice(idx, 1)
-}
-
-// 수정 저장 (CEN-037)
-function submitOrder() {
-  if (!modalWarehouseId.value) {
-    alert('창고를 선택해주세요.')
-    return
-  }
-  if (!modalVendorId.value) {
-    alert('거래처를 선택해주세요.')
-    return
-  }
-  if (modalCart.value.length === 0) {
-    alert('발주할 품목을 추가해주세요.')
-    return
-  }
-
-  poStore.updateOrder(poStore.selectedOrder.id, {
-    warehouseId: modalWarehouseId.value,
-    items: modalCart.value,
-  })
-
-  closeOrderModal()
+  router.push({ name: 'hq-purchase-order-edit', params: { id: order.id } })
 }
 
 // ─── ESC 키로 상세 패널 닫기 ────────────────────────────────────────────────
 function handleKeydown(e) {
-  if (e.key === 'Escape' && !showOrderModal.value && poStore.selectedOrderId) {
+  if (e.key === 'Escape' && poStore.selectedOrderId) {
     poStore.selectedOrderId = null
   }
 }
@@ -409,13 +184,6 @@ const XIcon = IconBase([
 const EditIcon = IconBase([
   { tag: 'path', attrs: { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' } },
   { tag: 'path', attrs: { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z' } },
-])
-
-const TrashIcon = IconBase([
-  { tag: 'polyline', attrs: { points: '3 6 5 6 21 6' } },
-  { tag: 'path', attrs: { d: 'M19 6 18 20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' } },
-  { tag: 'path', attrs: { d: 'M10 11v6' } },
-  { tag: 'path', attrs: { d: 'M14 11v6' } },
 ])
 
 const InfoIcon = IconBase([
@@ -707,7 +475,7 @@ const TruckIcon = IconBase([
                 <button
                   type="button"
                   class="inline-flex items-center justify-center gap-1 border border-gray-400 bg-white px-2 py-2.5 text-[11px] font-black text-gray-700 hover:bg-gray-50"
-                  @click="openEditModal"
+                  @click="goEditPage"
                 >
                   <EditIcon :size="12" />
                   수정
@@ -769,209 +537,6 @@ const TruckIcon = IconBase([
           </div>
         </aside>
       </section>
-    </div>
-
-    <!-- ================================================================ -->
-    <!-- 모달 1/2: 새 발주 생성 / 발주 수정 (SO-026, SO-027, SO-028)       -->
-    <!-- ================================================================ -->
-    <div
-      v-if="showOrderModal"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      @click.self="closeOrderModal"
-    >
-      <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden bg-white shadow-xl">
-        <!-- 모달 헤더 -->
-        <div class="flex items-center justify-between bg-[#004D3C] px-5 py-4 text-white">
-          <h2 class="text-sm font-black">발주 수정</h2>
-          <button
-            type="button"
-            class="p-1 text-white/80 hover:bg-white/10"
-            @click="closeOrderModal"
-          >
-            <XIcon :size="16" />
-          </button>
-        </div>
-
-        <!-- 모달 본문 -->
-        <div class="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-          <!-- 창고 선택 -->
-          <div>
-            <label class="mb-1 block text-xs font-bold text-gray-700">
-              입고 창고 <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="modalWarehouseId"
-              class="w-full border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#004D3C]"
-            >
-              <option value="">창고 선택</option>
-              <option v-for="wh in poStore.warehouses" :key="wh.id" :value="wh.id">
-                {{ wh.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 거래처 선택 -->
-          <div>
-            <label class="mb-1 block text-xs font-bold text-gray-700">
-              거래처 <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="modalVendorId"
-              class="w-full border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#004D3C]"
-              @change="modalProductSearch = ''"
-            >
-              <option value="">거래처 선택</option>
-              <option v-for="vendor in VENDORS" :key="vendor.id" :value="vendor.id">
-                {{ vendor.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 제품 검색 (SO-026: 주문 물품 검색) -->
-          <div>
-            <label class="mb-1 block text-xs font-bold text-gray-700">제품 검색</label>
-            <div class="relative">
-              <SearchIcon
-                :size="14"
-                class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                v-model="modalProductSearch"
-                type="text"
-                placeholder="제품명으로 검색..."
-                :disabled="!modalVendorId"
-                class="w-full border border-gray-300 bg-white py-2 pl-8 pr-3 text-xs outline-none focus:border-[#004D3C] disabled:bg-gray-50 disabled:text-gray-400"
-              />
-            </div>
-
-            <!-- 검색 결과 목록 -->
-            <div
-              v-if="modalVendorId"
-              class="mt-1 max-h-44 overflow-y-auto border border-gray-200 bg-white"
-            >
-              <div
-                v-for="vp in modalVendorProducts"
-                :key="vp.id"
-                class="flex cursor-pointer items-center justify-between px-3 py-2 hover:bg-[#E6F2F0]"
-                @click="addToCart(vp)"
-              >
-                <div>
-                  <p class="text-xs font-black text-gray-800">{{ vp.productName }}</p>
-                  <p class="text-[10px] text-gray-400">{{ vp.productCode }}</p>
-                </div>
-                <div class="text-right">
-                  <p class="text-xs font-bold text-[#004D3C]">
-                    ₩{{ vp.unitPrice.toLocaleString() }}
-                  </p>
-                  <p class="text-[10px] text-gray-400">단가</p>
-                </div>
-              </div>
-              <div
-                v-if="modalVendorProducts.length === 0"
-                class="px-3 py-4 text-center text-xs text-gray-400"
-              >
-                검색 결과가 없습니다.
-              </div>
-            </div>
-            <p v-else class="mt-1 text-[11px] text-gray-400">거래처를 먼저 선택해주세요.</p>
-          </div>
-
-          <!-- 장바구니 테이블 -->
-          <div v-if="modalCart.length > 0">
-            <p class="mb-2 text-xs font-bold text-gray-700">발주 품목 목록</p>
-            <table class="w-full text-xs">
-              <thead class="bg-gray-100 text-[10px] uppercase text-gray-500">
-                <tr>
-                  <th class="px-2 py-2 text-left font-black">제품명</th>
-                  <th class="w-20 px-2 py-2 text-right font-black">단가</th>
-                  <th class="w-20 px-2 py-2 text-center font-black">수량</th>
-                  <th class="w-20 px-2 py-2 text-right font-black">소계</th>
-                  <th class="w-8 px-2 py-2 text-center font-black"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                <tr v-for="(item, idx) in modalCart" :key="item.productId">
-                  <td class="px-2 py-2 font-bold text-gray-800">{{ item.productName }}</td>
-                  <td class="px-2 py-2 text-right text-gray-500">
-                    ₩{{ item.unitPrice.toLocaleString() }}
-                  </td>
-                  <td class="px-2 py-2 text-center">
-                    <div class="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white text-xs hover:bg-gray-50"
-                        @click="updateCartQty(idx, item.quantity - 1)"
-                      >
-                        -
-                      </button>
-                      <input
-                        :value="item.quantity"
-                        type="number"
-                        min="1"
-                        class="w-10 border border-gray-300 py-0.5 text-center text-xs outline-none focus:border-[#004D3C]"
-                        @change="updateCartQty(idx, $event.target.value)"
-                      />
-                      <button
-                        type="button"
-                        class="flex h-5 w-5 items-center justify-center border border-gray-300 bg-white text-xs hover:bg-gray-50"
-                        @click="updateCartQty(idx, item.quantity + 1)"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td class="px-2 py-2 text-right font-bold text-gray-700">
-                    ₩{{ item.subtotal.toLocaleString() }}
-                  </td>
-                  <td class="px-2 py-2 text-center">
-                    <button
-                      type="button"
-                      class="text-red-400 hover:text-red-600"
-                      @click="removeCartItem(idx)"
-                    >
-                      <TrashIcon :size="12" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot class="border-t border-gray-300 bg-gray-50 font-black text-gray-900">
-                <tr>
-                  <td colspan="3" class="px-2 py-2">총액</td>
-                  <td colspan="2" class="px-2 py-2 text-right text-[#004D3C]">
-                    ₩{{ modalCartTotal.toLocaleString() }}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div
-            v-else
-            class="rounded border border-dashed border-gray-300 py-6 text-center text-xs text-gray-400"
-          >
-            제품을 검색하여 발주 품목을 추가해주세요.
-          </div>
-        </div>
-
-        <!-- 모달 푸터 -->
-        <div
-          class="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3"
-        >
-          <button
-            type="button"
-            class="border border-gray-300 bg-white px-4 py-2 text-xs font-black text-gray-700 hover:bg-gray-100"
-            @click="closeOrderModal"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            class="border border-[#004D3C] bg-[#004D3C] px-4 py-2 text-xs font-black text-white hover:bg-[#1f4b3a]"
-            @click="submitOrder"
-          >
-            수정 저장
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- ───────── 모달: 거래처 승인 received confirm ───────── -->
