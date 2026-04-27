@@ -6,6 +6,7 @@ import DevLoginView from '@/views/DevLoginView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 
+import StoreDashboardView from '@/views/store/StoreDashboardView.vue'
 import StorePosView from '@/views/store/StorePosView.vue'
 import StoreOrdersView from '@/views/store/StoreOrdersView.vue'
 import StoreInventoryView from '@/views/store/StoreInventoryView.vue'
@@ -74,6 +75,7 @@ const router = createRouter({
     { path: '/hq/ai-report', name: 'hq-ai-report', component: HqAiReportView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/esg', name: 'hq-esg', component: EsgDashBoardView, meta: { requiresAuth: true, role: 'hq' } },
 
+    { path: '/store/dashboard', name: 'store-dashboard', component: StoreDashboardView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/pos', name: 'store-pos', component: StorePosView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders', name: 'store-orders', component: StoreOrdersView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/inventory', name: 'store-inventory', component: StoreInventoryView, meta: { requiresAuth: true, role: 'store' } },

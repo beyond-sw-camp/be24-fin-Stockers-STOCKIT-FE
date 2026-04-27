@@ -100,6 +100,7 @@ export const roleMenus = {
     },
   ],
   store: [
+    { label: '대시보드', path: '/store/dashboard', icon: 'layout' },
     { label: 'POS / 판매', path: '/store/pos', icon: 'store' },
     { label: '주문 관리', path: '/store/orders', icon: 'file' },
     { label: '재고 관리', path: '/store/inventory', icon: 'warehouse' },
@@ -115,7 +116,7 @@ export const roleMenus = {
 
 export const roleHomeMap = {
   hq: '/hq/dashboard',
-  store: '/store/pos',
+  store: '/store/dashboard',
   warehouse: '/warehouse/inventory',
 }
 
