@@ -90,6 +90,14 @@ export const roleMenus = {
         { label: 'AI 리포트', path: '/hq/ai-report' },
       ],
     },
+    {
+      label: 'ESG 대시보드',
+      path: '/hq/esg',
+      icon: 'leaf',
+      children: [
+        { label: '친환경 발자국 현황판', path: '/hq/esg' },
+      ],
+    },
   ],
   store: [
     { label: 'POS / 판매', path: '/store/pos', icon: 'store' },

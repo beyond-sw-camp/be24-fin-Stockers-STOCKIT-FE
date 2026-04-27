@@ -182,6 +182,11 @@ const HistoryIcon = IconBase([
   { tag: 'path', attrs: { d: 'M12 7v5l3 2' } },
 ])
 
+const LeafIcon = IconBase([
+  { tag: 'path', attrs: { d: 'M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 8-4 16-9 16Z' } },
+  { tag: 'path', attrs: { d: 'M2 22c5-2 9-6 12-12' } },
+])
+
 const iconMap = {
   layout: LayoutDashboardIcon,
   warehouse: WarehouseIcon,
@@ -199,6 +204,7 @@ const iconMap = {
   briefcase: StoreIcon,
   link2: CheckCircle2Icon,
   refresh: HistoryIcon,
+  leaf: LeafIcon,
   sales: BarChart3Icon,
   target: AlertCircleIcon,
   trend: BarChart3Icon,
