@@ -12,6 +12,7 @@ import StoreInventoryView from '@/views/store/StoreInventoryView.vue'
 import StoreInboundView from '@/views/store/StoreInboundView.vue'
 import StoreAiReportView from '@/views/store/StoreAiReportView.vue'
 
+import WarehouseDashboardView from '@/views/warehouse/WarehouseDashboardView.vue'
 import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue'
 import WarehouseInventorySkuDetailView from '@/views/warehouse/WarehouseInventorySkuDetailView.vue'
 import WarehouseInboundView from '@/views/warehouse/WarehouseInboundView.vue'
@@ -36,6 +37,8 @@ import EsgDashBoardView from '@/views/hq/esg/EsgDashBoardView.vue'
 import AccountListView from '@/views/hq/account/AccountListView.vue'
 import AccountApprovalView from '@/views/hq/account/AccountApprovalView.vue'
 import HqAnalyticsOrderStatsView from '@/views/hq/analytics/HqAnalyticsOrderStatsView.vue'
+import HqAnalyticsSeasonalView from '@/views/hq/analytics/HqAnalyticsSeasonalView.vue'
+import HqAnalyticsTurnoverView from '@/views/hq/analytics/HqAnalyticsTurnoverView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,6 +74,8 @@ const router = createRouter({
     { path: '/hq/infrastructure', name: 'hq-infrastructure', component: HqInfrastructureManagementView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics', name: 'hq-analytics', component: HqSettlementStatisticsView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics/order-stats', name: 'hq-analytics-order-stats', component: HqAnalyticsOrderStatsView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/analytics/seasonal', name: 'hq-analytics-seasonal', component: HqAnalyticsSeasonalView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/analytics/turnover', name: 'hq-analytics-turnover', component: HqAnalyticsTurnoverView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/purchase-orders', name: 'hq-purchase-orders', component: HqPurchaseOrderView, meta: { requiresAuth: true, role: 'hq' } },
     {
       path: '/hq/purchase-orders/new',
@@ -100,6 +105,12 @@ const router = createRouter({
     { path: '/store/inbound', name: 'store-inbound', component: StoreInboundView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/ai-report', name: 'store-ai-report', component: StoreAiReportView, meta: { requiresAuth: true, role: 'store' } },
 
+    {
+      path: '/warehouse/dashboard',
+      name: 'wh-dashboard',
+      component: WarehouseDashboardView,
+      meta: { requiresAuth: true, role: 'warehouse' },
+    },
     {
       path: '/warehouse/inventory',
       name: 'wh-inventory',
