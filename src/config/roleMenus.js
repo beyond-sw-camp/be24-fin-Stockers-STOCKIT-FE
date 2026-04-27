@@ -6,6 +6,9 @@ export const roleMenus = {
       icon: 'layout',
       children: [
         { label: '운영 현황', path: '/hq/dashboard' },
+        { label: '재고 위험', path: '/hq/dashboard/inventory-risk' },
+        { label: '입출고 흐름', path: '/hq/dashboard/flow' },
+        { label: '알림 센터', path: '/hq/dashboard/alerts' },
       ],
     },
     {
