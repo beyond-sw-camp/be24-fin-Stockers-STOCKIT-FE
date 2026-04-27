@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import {
@@ -7,10 +7,15 @@ import {
   Recycle,
   ShieldCheck,
   TrendingDown,
+  TrendingUp,
   ArrowLeftRight,
   Navigation,
   Award,
   ChevronDown,
+  Scale,
+  Coins,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-vue-next'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
@@ -25,7 +30,65 @@ const activeTopMenu = computed(() => 'ESG 현황판')
 const activeSideMenu = ref('ESG 현황판')
 const esgSideMenus = [{ label: 'ESG 현황판', icon: 'chart', path: '/hq/esg' }]
 
-const { totalPoints } = storeToRefs(useEsgStore())
+const esgStore = useEsgStore()
+const { totalPoints, kauPrice, kauPriceUpdatedAt, kauPriceLoading } = storeToRefs(esgStore)
+
+const emissionCompliance = {
+  allocation: 5000,
+  ytdNet: 1135,
+  ytdReduced: 285,
+  utilizationPct: 22.7,
+  expectedSurplus: 1595,
+  warnPct: 75,
+  quarterly: [
+    { q: 'Q1', allocation: 1250, actual: 720 },
+    { q: 'Q2', allocation: 1250, actual: 415 },
+    { q: 'Q3', allocation: 1250, actual: 0 },
+    { q: 'Q4', allocation: 1250, actual: 0 },
+  ],
+}
+
+const marketVolume = {
+  reducedTons: 285,
+  surplusTons: 1595,
+  yearlyTonsProjected: 855,
+  yoyPct: 47,
+  monthlyTons: [
+    { m: '1월', tons: 76.4 },
+    { m: '2월', tons: 95.0 },
+    { m: '3월', tons: 86.4 },
+    { m: '4월', tons: 27.2 },
+  ],
+}
+
+const reducedKrw = computed(() => marketVolume.reducedTons * kauPrice.value)
+const surplusKrw = computed(() => marketVolume.surplusTons * kauPrice.value)
+const yearlyKrw = computed(() => marketVolume.yearlyTonsProjected * kauPrice.value)
+const maxMonthlyTons = computed(() =>
+  Math.max(...marketVolume.monthlyTons.map((m) => m.tons)),
+)
+
+const kauUpdatedLabel = computed(() => {
+  if (!kauPriceUpdatedAt.value) return '시세 미조회'
+  const d = new Date(kauPriceUpdatedAt.value)
+  const diffMin = Math.floor((Date.now() - d.getTime()) / 60000)
+  if (diffMin < 1) return '방금 전 갱신'
+  if (diffMin < 60) return `${diffMin}분 전 갱신`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}시간 전 갱신`
+  return (
+    new Intl.DateTimeFormat('ko-KR', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d) + ' 갱신'
+  )
+})
+
+onMounted(() => {
+  esgStore.fetchKauPrice()
+})
 
 const kpiMetrics = [
   { label: '탄소 배출 절감', value: '2,847', unit: 'kg CO₂', sub: '전월 대비 +12%', icon: TrendingDown, valueCls: 'text-emerald-700', iconBg: 'bg-emerald-50', iconCls: 'text-emerald-600' },
@@ -201,6 +264,188 @@ function handleLogout() {
               <span class="mb-0.5 text-[11px] text-gray-400">{{ m.unit }}</span>
             </div>
             <p class="mt-1 text-[10px] text-gray-400">{{ m.sub }}</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- 배출 한도 vs 실적 + 배출권 시장 가치 환산 -->
+      <section class="grid gap-3 xl:grid-cols-2">
+
+        <!-- 배출 한도 vs 실적 (K-ETS) -->
+        <article class="border border-gray-300 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-gray-200 px-3 py-2.5">
+            <h3 class="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
+              <Scale :size="15" class="text-blue-600" />
+              배출 한도 vs 실적
+              <span class="text-[10px] font-normal text-gray-400">K-ETS 컴플라이언스</span>
+            </h3>
+            <span class="inline-flex items-center gap-1 border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              <CheckCircle2 :size="11" />
+              준수
+            </span>
+          </div>
+
+          <div class="space-y-3 px-3 py-3">
+            <!-- 사용률 게이지 -->
+            <div>
+              <div class="mb-1.5 flex items-baseline justify-between">
+                <span class="text-[11px] font-medium text-gray-500">연간 할당량 사용률</span>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-[20px] font-black text-blue-700">{{ emissionCompliance.utilizationPct }}</span>
+                  <span class="text-[11px] text-gray-400">%</span>
+                </div>
+              </div>
+              <div class="relative h-3 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  class="h-3 bg-gradient-to-r from-emerald-400 to-emerald-500"
+                  :style="{ width: emissionCompliance.utilizationPct + '%' }"
+                />
+                <div class="absolute bottom-0 top-0 w-px bg-amber-400" :style="{ left: emissionCompliance.warnPct + '%' }" />
+                <div class="absolute bottom-0 top-0 right-0 w-px bg-red-400" />
+              </div>
+              <div class="mt-1 flex justify-between text-[9px] text-gray-400">
+                <span>0</span>
+                <span class="text-amber-600">경계 75%</span>
+                <span class="text-red-600">한도 100%</span>
+              </div>
+            </div>
+
+            <!-- 3개 메트릭 -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="border border-gray-200 bg-gray-50 px-2 py-2">
+                <p class="text-[10px] text-gray-500">정부 할당량</p>
+                <div class="mt-0.5 flex items-baseline gap-0.5">
+                  <span class="text-[14px] font-bold text-gray-800">{{ emissionCompliance.allocation.toLocaleString() }}</span>
+                  <span class="text-[9px] text-gray-400">tCO₂</span>
+                </div>
+              </div>
+              <div class="border border-gray-200 bg-gray-50 px-2 py-2">
+                <p class="text-[10px] text-gray-500">YTD 실효 배출</p>
+                <div class="mt-0.5 flex items-baseline gap-0.5">
+                  <span class="text-[14px] font-bold text-blue-700">{{ emissionCompliance.ytdNet.toLocaleString() }}</span>
+                  <span class="text-[9px] text-gray-400">tCO₂</span>
+                </div>
+              </div>
+              <div class="border border-emerald-200 bg-emerald-50 px-2 py-2">
+                <p class="text-[10px] text-emerald-700">예상 잉여</p>
+                <div class="mt-0.5 flex items-baseline gap-0.5">
+                  <span class="text-[14px] font-bold text-emerald-700">+{{ emissionCompliance.expectedSurplus.toLocaleString() }}</span>
+                  <span class="text-[9px] text-emerald-600">tCO₂</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 분기별 진행 -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-medium text-gray-500">분기별 배출 진행</p>
+              <div class="grid grid-cols-4 gap-2">
+                <div v-for="q in emissionCompliance.quarterly" :key="q.q" class="text-center">
+                  <div class="flex h-12 items-end overflow-hidden bg-gray-100">
+                    <div
+                      class="w-full bg-gradient-to-t from-blue-500 to-blue-400"
+                      :style="{ height: (q.actual / q.allocation * 100) + '%' }"
+                    />
+                  </div>
+                  <p class="mt-1 text-[10px] font-medium text-gray-600">{{ q.q }}</p>
+                  <p class="text-[9px] text-gray-400">{{ q.actual }}/{{ q.allocation }}t</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 절감 효과 강조 -->
+            <div class="flex items-center justify-between border border-emerald-200 bg-emerald-50/50 px-2.5 py-2">
+              <div class="flex items-center gap-2">
+                <TrendingDown :size="13" class="text-emerald-600" />
+                <span class="text-[11px] font-medium text-emerald-800">탄소 감축 활동으로</span>
+              </div>
+              <span class="text-[12px] font-bold text-emerald-700">{{ emissionCompliance.ytdReduced }} tCO₂ 절감</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- 배출권 시장 가치 환산 -->
+        <article class="border border-gray-300 bg-white shadow-sm">
+          <div class="flex items-center justify-between gap-2 border-b border-gray-200 px-3 py-2.5">
+            <h3 class="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
+              <Coins :size="15" class="text-amber-600" />
+              배출권 시장 가치 환산
+            </h3>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] text-gray-400">{{ kauUpdatedLabel }}</span>
+              <span class="inline-flex items-center gap-1 border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                KAU24 ₩{{ kauPrice.toLocaleString() }}/tCO₂
+              </span>
+              <button
+                type="button"
+                class="flex h-5 w-5 items-center justify-center border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50"
+                :disabled="kauPriceLoading"
+                title="시세 새로고침"
+                @click="esgStore.fetchKauPrice()"
+              >
+                <RefreshCw :size="11" :class="kauPriceLoading ? 'animate-spin' : ''" />
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-3 px-3 py-3">
+            <!-- 메인 환산 가치 -->
+            <div class="border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 px-3 py-3">
+              <p class="text-[10px] font-medium text-amber-700">절감 활동 시장 환산 가치 (YTD)</p>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span class="text-[22px] font-black text-amber-700">₩{{ reducedKrw.toLocaleString() }}</span>
+              </div>
+              <p class="mt-1 text-[10px] text-amber-700/70">
+                {{ marketVolume.reducedTons }} tCO₂ × ₩{{ kauPrice.toLocaleString() }} = 절감 인정 가치
+              </p>
+            </div>
+
+            <!-- 3개 메트릭 -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="border border-gray-200 bg-gray-50 px-2 py-2">
+                <p class="text-[10px] text-gray-500">YTD 절감권</p>
+                <div class="mt-0.5">
+                  <span class="text-[12px] font-bold text-amber-700">₩{{ Math.round(reducedKrw / 10000).toLocaleString() }}만</span>
+                </div>
+              </div>
+              <div class="border border-gray-200 bg-gray-50 px-2 py-2">
+                <p class="text-[10px] text-gray-500">예상 잉여권</p>
+                <div class="mt-0.5">
+                  <span class="text-[12px] font-bold text-emerald-700">₩{{ Math.round(surplusKrw / 10000).toLocaleString() }}만</span>
+                </div>
+              </div>
+              <div class="border border-gray-200 bg-gray-50 px-2 py-2">
+                <p class="text-[10px] text-gray-500">연간 추정</p>
+                <div class="mt-0.5">
+                  <span class="text-[12px] font-bold text-violet-700">₩{{ Math.round(yearlyKrw / 10000).toLocaleString() }}만</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 월별 추이 -->
+            <div>
+              <p class="mb-1.5 text-[10px] font-medium text-gray-500">월별 환산 가치 추이</p>
+              <div class="grid grid-cols-4 gap-2">
+                <div v-for="mv in marketVolume.monthlyTons" :key="mv.m" class="text-center">
+                  <div class="flex h-12 items-end overflow-hidden bg-gray-100">
+                    <div
+                      class="w-full bg-gradient-to-t from-amber-500 to-amber-400"
+                      :style="{ height: (mv.tons / maxMonthlyTons * 100) + '%' }"
+                    />
+                  </div>
+                  <p class="mt-1 text-[10px] font-medium text-gray-600">{{ mv.m }}</p>
+                  <p class="text-[9px] text-gray-400">₩{{ Math.round(mv.tons * kauPrice / 10000).toLocaleString() }}만</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- YoY 강조 -->
+            <div class="flex items-center justify-between border border-violet-200 bg-violet-50/50 px-2.5 py-2">
+              <div class="flex items-center gap-2">
+                <TrendingUp :size="13" class="text-violet-600" />
+                <span class="text-[11px] font-medium text-violet-800">전년 동기 대비 환산 가치</span>
+              </div>
+              <span class="text-[12px] font-bold text-violet-700">+{{ marketVolume.yoyPct }}%</span>
+            </div>
           </div>
         </article>
       </section>
