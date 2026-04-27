@@ -7,8 +7,10 @@ import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
 const auth = useAuthStore()
+const storeMenus = roleMenus.store
+const sideMenus = roleMenus.store.find((menu) => menu.label === '주문 관리')?.children ?? []
+const activeTopMenu = ref('주문 관리')
 const activeSideMenu = ref('주문 관리')
-const sideMenus = roleMenus.store
 
 function handleLogout() {
   auth.logout()
@@ -18,7 +20,8 @@ function handleLogout() {
 
 <template>
   <AppLayout
-    active-top-menu="주문 관리"
+    :active-top-menu="activeTopMenu"
+    :top-menus="storeMenus"
     :side-menus="sideMenus"
     v-model:active-side-menu="activeSideMenu"
     @logout="handleLogout"

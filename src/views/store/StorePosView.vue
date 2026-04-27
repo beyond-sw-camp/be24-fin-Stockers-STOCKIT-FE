@@ -1,56 +1,145 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useInventoryStore } from '@/stores/inventory.js'
+import { useSalesStore } from '@/stores/sales.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 const inventory = useInventoryStore()
+const sales = useSalesStore()
 
-const activeSideMenu = ref('POS / 판매')
-const sideMenus = roleMenus.store
+const storeMenus = roleMenus.store
+const salesMenus = roleMenus.store.find((menu) => menu.label === '판매 관리')?.children ?? []
+const activeTopMenu = computed(() => '판매 관리')
+const activeSideMenu = ref('판매 등록')
 
-const activeCategory = ref('전체')
+const selectedMainCategory = ref('전체')
+const selectedSubCategory = ref('전체')
+const selectedColor = ref('전체')
 const searchTerm = ref('')
-const quantities = ref({})
+const salesLines = ref([])
+const feedbackMessage = ref('')
 
-const filteredProducts = computed(() => {
-  return inventory.products.filter(p => {
-    const matchCat = activeCategory.value === '전체' || p.category === activeCategory.value
-    const matchSearch = p.name.includes(searchTerm.value.trim())
-    return matchCat && matchSearch
+const subCategoryOptions = computed(() => inventory.getSubCategories(selectedMainCategory.value))
+
+const filteredSkus = computed(() => {
+  const keyword = searchTerm.value.trim().toLowerCase()
+  return inventory.skus.filter((sku) => {
+    const matchMain = selectedMainCategory.value === '전체' || sku.mainCategory === selectedMainCategory.value
+    const matchSub = selectedSubCategory.value === '전체' || sku.subCategory === selectedSubCategory.value
+    const matchColor = selectedColor.value === '전체' || sku.color === selectedColor.value
+    const matchKeyword = !keyword || [
+      sku.productName,
+      sku.mainCategory,
+      sku.subCategory,
+      sku.color,
+      sku.size,
+    ].join(' ').toLowerCase().includes(keyword)
+    return matchMain && matchSub && matchColor && matchKeyword
   })
 })
 
-function getQty(productId) {
-  return quantities.value[productId] ?? 1
-}
+const totalQuantity = computed(() =>
+  salesLines.value.reduce((sum, line) => sum + line.quantity, 0),
+)
 
+const totalAmount = computed(() =>
+  salesLines.value.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0),
+)
 
-function setQty(productId, val) {
-  const num = parseInt(val)
-  quantities.value[productId] = isNaN(num) || num < 1 ? 1 : num
-}
-
-function isOverStock(product) {
-  return getQty(product.id) > product.stock
-}
-
-function handleSell(product) {
-  const qty = getQty(product.id)
-  const result = inventory.sell(product.id, qty)
-  if (result.success) {
-    quantities.value[product.id] = 1
+function resetSubCategoryIfNeeded() {
+  if (!subCategoryOptions.value.includes(selectedSubCategory.value)) {
+    selectedSubCategory.value = '전체'
   }
+}
+
+function addToSalesList(sku) {
+  feedbackMessage.value = ''
+
+  if (sku.stock === 0) {
+    feedbackMessage.value = '품절된 상품은 판매 목록에 추가할 수 없습니다.'
+    return
+  }
+
+  const existing = salesLines.value.find((line) => line.skuId === sku.skuId)
+  if (existing) {
+    if (existing.quantity + 1 > sku.stock) {
+      feedbackMessage.value = '재고를 초과해 추가할 수 없습니다.'
+      return
+    }
+    existing.quantity += 1
+    return
+  }
+
+  salesLines.value = [
+    ...salesLines.value,
+    {
+      skuId: sku.skuId,
+      productId: sku.productId,
+      productName: sku.productName,
+      mainCategory: sku.mainCategory,
+      subCategory: sku.subCategory,
+      color: sku.color,
+      size: sku.size,
+      unitPrice: sku.unitPrice,
+      quantity: 1,
+    },
+  ]
+}
+
+function updateLineQuantity(line, value) {
+  const sku = inventory.getSkuById(line.skuId)
+  const next = Number.parseInt(value, 10)
+  if (!sku) return
+  if (Number.isNaN(next) || next < 1) {
+    line.quantity = 1
+    return
+  }
+  line.quantity = Math.min(next, sku.stock)
+}
+
+function increaseLine(line) {
+  const sku = inventory.getSkuById(line.skuId)
+  if (!sku || line.quantity >= sku.stock) return
+  line.quantity += 1
+}
+
+function decreaseLine(line) {
+  if (line.quantity <= 1) return
+  line.quantity -= 1
+}
+
+function removeLine(skuId) {
+  salesLines.value = salesLines.value.filter((line) => line.skuId !== skuId)
+}
+
+function clearSalesList() {
+  salesLines.value = []
+}
+
+function confirmSale() {
+  feedbackMessage.value = ''
+  const result = sales.createSale({
+    items: salesLines.value.map((line) => ({ skuId: line.skuId, quantity: line.quantity })),
+  })
+
+  if (!result.success) {
+    feedbackMessage.value = result.message
+    return
+  }
+
+  salesLines.value = []
+  feedbackMessage.value = `${result.sale.saleId} 판매가 등록되었습니다.`
 }
 
 const statusLabel = { out: '품절', low: '부족', normal: '정상' }
 const statusClass = {
-  out:    'bg-red-100 text-red-700',
-  low:    'bg-orange-100 text-orange-700',
+  out: 'bg-red-100 text-red-700',
+  low: 'bg-orange-100 text-orange-700',
   normal: 'bg-green-100 text-green-700',
 }
 
@@ -62,132 +151,227 @@ function handleLogout() {
 
 <template>
   <AppLayout
-    active-top-menu="POS / 판매"
-    :side-menus="sideMenus"
+    :active-top-menu="activeTopMenu"
+    :top-menus="storeMenus"
+    :side-menus="salesMenus"
     v-model:active-side-menu="activeSideMenu"
     @logout="handleLogout"
   >
-    <div class="space-y-4">
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between gap-4">
-        <h1 class="text-sm font-black text-gray-800 uppercase tracking-widest">POS / 판매</h1>
-        <input
-          v-model="searchTerm"
-          type="text"
-          placeholder="제품명 검색..."
-          class="w-56 px-3 py-1.5 border border-gray-300 text-xs bg-white outline-none focus:border-[#004D3C] transition-colors"
-        />
-      </div>
+    <div class="flex flex-col gap-4">
+      <section class="border border-gray-300 bg-white p-4 shadow-sm">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Sales</p>
+            <h1 class="mt-1 text-lg font-black text-gray-900">판매 등록</h1>
+            <p class="mt-1 text-xs font-bold text-gray-500">
+              카테고리 우선 탐색으로 SKU를 추가하고 판매 목록 전체를 한 번에 판매합니다.
+            </p>
+          </div>
+          <div class="text-right text-[11px] font-bold text-gray-500">
+            <p>판매 목록 {{ salesLines.length }}건</p>
+            <p class="mt-1 text-gray-400">총 수량 {{ totalQuantity }}개 · 총 금액 ₩{{ totalAmount.toLocaleString() }}</p>
+          </div>
+        </div>
+      </section>
 
-      <!-- 카테고리 탭 -->
-      <div class="flex gap-1 border-b border-gray-200">
-        <button
-          v-for="cat in inventory.categories"
-          :key="cat"
-          type="button"
-          class="px-4 py-2 text-xs font-bold uppercase tracking-wide border-b-2 transition-colors"
-          :class="activeCategory === cat
-            ? 'border-[#004D3C] text-[#004D3C]'
-            : 'border-transparent text-gray-400 hover:text-gray-600'"
-          @click="activeCategory = cat"
-        >
-          {{ cat }}
-        </button>
-      </div>
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+        <section class="border border-gray-300 bg-white shadow-sm">
+          <div class="border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-black text-gray-900">상품 탐색</h2>
+          </div>
 
-      <!-- 제품 테이블 -->
-      <div class="bg-white border border-gray-200 overflow-hidden">
-        <table class="w-full text-xs">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-4 py-2.5 text-left font-black text-gray-500 uppercase tracking-wider w-24">카테고리</th>
-              <th class="px-4 py-2.5 text-left font-black text-gray-500 uppercase tracking-wider">제품명</th>
-              <th class="px-4 py-2.5 text-right font-black text-gray-500 uppercase tracking-wider w-28">단가</th>
-              <th class="px-4 py-2.5 text-center font-black text-gray-500 uppercase tracking-wider w-28">재고</th>
-              <th class="px-4 py-2.5 text-center font-black text-gray-500 uppercase tracking-wider w-28">판매 수량</th>
-              <th class="px-4 py-2.5 text-center font-black text-gray-500 uppercase tracking-wider w-20">판매</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="product in filteredProducts"
-              :key="product.id"
-              class="hover:bg-gray-50 transition-colors"
-              :class="inventory.stockStatus(product) === 'out' ? 'opacity-50' : ''"
+          <div class="grid gap-3 border-b border-gray-200 bg-gray-50/80 px-4 py-4 md:grid-cols-4">
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold text-gray-500">대분류</span>
+              <select
+                v-model="selectedMainCategory"
+                class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
+                @change="resetSubCategoryIfNeeded"
+              >
+                <option v-for="category in inventory.mainCategories" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold text-gray-500">소분류</span>
+              <select
+                v-model="selectedSubCategory"
+                class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
+              >
+                <option v-for="category in subCategoryOptions" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold text-gray-500">색상</span>
+              <select
+                v-model="selectedColor"
+                class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
+              >
+                <option v-for="color in inventory.colorOptions" :key="color" :value="color">
+                  {{ color }}
+                </option>
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold text-gray-500">검색</span>
+              <input
+                v-model="searchTerm"
+                type="search"
+                class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#004D3C]"
+                placeholder="상품명, 색상, 사이즈"
+              />
+            </label>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-[900px] w-full border-collapse text-xs">
+              <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 text-left font-black">상품명</th>
+                  <th class="px-4 py-3 text-left font-black">카테고리</th>
+                  <th class="px-4 py-3 text-left font-black">옵션</th>
+                  <th class="px-4 py-3 text-right font-black">가격</th>
+                  <th class="px-4 py-3 text-center font-black">재고</th>
+                  <th class="px-4 py-3 text-center font-black">상태</th>
+                  <th class="px-4 py-3 text-center font-black">추가</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr
+                  v-for="sku in filteredSkus"
+                  :key="sku.skuId"
+                  class="transition-colors hover:bg-gray-50"
+                >
+                  <td class="px-4 py-3">
+                    <p class="font-black text-gray-900">{{ sku.productName }}</p>
+                  </td>
+                  <td class="px-4 py-3 font-bold text-gray-600">
+                    {{ sku.mainCategory }} &gt; {{ sku.subCategory }}
+                  </td>
+                  <td class="px-4 py-3 font-bold text-gray-700">{{ sku.color }} / {{ sku.size }}</td>
+                  <td class="px-4 py-3 text-right font-black text-gray-900">₩{{ sku.unitPrice.toLocaleString() }}</td>
+                  <td class="px-4 py-3 text-center font-black text-gray-700">{{ sku.stock }}</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="inline-flex min-w-12 justify-center px-2 py-1 text-[11px] font-black" :class="statusClass[inventory.stockStatus(sku)]">
+                      {{ statusLabel[inventory.stockStatus(sku)] }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 text-[11px] font-black transition-colors"
+                      :class="sku.stock === 0 ? 'cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-[#004D3C] text-white hover:bg-[#003d30]'"
+                      :disabled="sku.stock === 0"
+                      @click="addToSalesList(sku)"
+                    >
+                      판매 목록 추가
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="filteredSkus.length === 0">
+                  <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                    조건에 맞는 상품이 없습니다.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="border border-gray-300 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+            <div>
+              <h2 class="text-sm font-black text-gray-900">판매 목록</h2>
+              <p class="mt-1 text-[11px] font-bold text-gray-400">선택한 SKU를 한 판매건으로 저장합니다.</p>
+            </div>
+            <button
+              type="button"
+              class="text-[11px] font-black text-gray-500 transition hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="salesLines.length === 0"
+              @click="clearSalesList"
             >
-              <!-- 카테고리 -->
-              <td class="px-4 py-3 text-gray-500">{{ product.category }}</td>
+              전체 비우기
+            </button>
+          </div>
 
-              <!-- 제품명 -->
-              <td class="px-4 py-3 font-bold text-gray-800">{{ product.name }}</td>
+          <div class="flex max-h-[560px] flex-col overflow-y-auto">
+            <div v-if="salesLines.length === 0" class="flex min-h-[280px] items-center justify-center px-6 text-center text-sm font-bold text-gray-400">
+              판매할 상품을 추가하면 이곳에 판매 목록이 쌓입니다.
+            </div>
 
-              <!-- 단가 -->
-              <td class="px-4 py-3 text-right text-gray-700">
-                ₩{{ product.unitPrice.toLocaleString() }}
-              </td>
-
-              <!-- 재고 + 상태 배지 -->
-              <td class="px-4 py-3 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <span
-                    class="inline-block px-2 py-0.5 text-xs font-bold"
-                    :class="statusClass[inventory.stockStatus(product)]"
-                  >
-                    {{ inventory.stockStatus(product) === 'out' ? '품절' : statusLabel[inventory.stockStatus(product)] }}
-                  </span>
-                  <span v-if="inventory.stockStatus(product) !== 'out'" class="text-gray-700 font-bold">
-                    {{ product.stock.toLocaleString() }}
-                  </span>
+            <div v-for="line in salesLines" :key="line.skuId" class="border-b border-gray-100 px-4 py-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-black text-gray-900">{{ line.productName }}</p>
+                  <p class="mt-1 text-[11px] font-bold text-gray-500">
+                    {{ line.mainCategory }} &gt; {{ line.subCategory }} · {{ line.color }} / {{ line.size }}
+                  </p>
                 </div>
-              </td>
-
-              <!-- 판매 수량 input -->
-              <td class="px-4 py-3 text-center">
-                <div class="flex flex-col items-center gap-1">
-                  <input
-                    type="number"
-                    min="1"
-                    :max="product.stock"
-                    :value="getQty(product.id)"
-                    :disabled="inventory.stockStatus(product) === 'out'"
-                    class="w-20 px-2 py-1 border text-center outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    :class="isOverStock(product) ? 'border-red-400 bg-red-50' : 'border-gray-300 focus:border-[#004D3C]'"
-                    @input="setQty(product.id, $event.target.value)"
-                  />
-                  <span v-if="isOverStock(product)" class="text-red-500 text-xs">재고 초과</span>
-                </div>
-              </td>
-
-              <!-- 판매 버튼 -->
-              <td class="px-4 py-3 text-center">
                 <button
                   type="button"
-                  :disabled="inventory.stockStatus(product) === 'out' || isOverStock(product)"
-                  class="px-3 py-1.5 text-xs font-black uppercase tracking-wide transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  :class="inventory.stockStatus(product) === 'out' || isOverStock(product)
-                    ? 'bg-gray-200 text-gray-400'
-                    : 'bg-[#004D3C] text-white hover:bg-[#003d30]'"
-                  @click="handleSell(product)"
+                  class="text-sm font-black text-gray-300 transition hover:text-red-500"
+                  @click="removeLine(line.skuId)"
                 >
-                  판매
+                  ×
                 </button>
-              </td>
-            </tr>
+              </div>
 
-            <!-- 검색 결과 없음 -->
-            <tr v-if="filteredProducts.length === 0">
-              <td colspan="6" class="px-4 py-12 text-center text-gray-400 text-xs">
-                검색 결과가 없습니다.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <div class="mt-3 flex items-center justify-between gap-3">
+                <div class="inline-flex items-center border border-gray-300">
+                  <button type="button" class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50" @click="decreaseLine(line)">−</button>
+                  <input
+                    :value="line.quantity"
+                    type="number"
+                    min="1"
+                    :max="inventory.getSkuById(line.skuId)?.stock ?? 1"
+                    class="h-8 w-16 border-x border-gray-300 text-center text-xs font-black text-gray-900 outline-none"
+                    @input="updateLineQuantity(line, $event.target.value)"
+                  />
+                  <button type="button" class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50" @click="increaseLine(line)">+</button>
+                </div>
+                <div class="text-right">
+                  <p class="text-[11px] font-bold text-gray-400">라인 금액</p>
+                  <p class="text-sm font-black text-gray-900">₩{{ (line.quantity * line.unitPrice).toLocaleString() }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <!-- 하단 요약 -->
-      <div class="flex items-center justify-between text-xs text-gray-400">
-        <span>총 {{ filteredProducts.length }}개 제품</span>
-        <span>품절 {{ filteredProducts.filter(p => inventory.stockStatus(p) === 'out').length }}개</span>
+          <div class="border-t border-gray-200 bg-gray-50 px-4 py-4">
+            <div class="flex items-center justify-between text-xs font-bold text-gray-500">
+              <span>총 수량</span>
+              <span>{{ totalQuantity }}개</span>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-sm font-black text-gray-900">
+              <span>총 금액</span>
+              <span>₩{{ totalAmount.toLocaleString() }}</span>
+            </div>
+
+            <p
+              v-if="feedbackMessage"
+              class="mt-3 border px-3 py-2 text-[11px] font-black"
+              :class="feedbackMessage.includes('등록') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'"
+            >
+              {{ feedbackMessage }}
+            </p>
+
+            <button
+              type="button"
+              class="mt-4 h-11 w-full text-sm font-black transition-colors"
+              :class="salesLines.length === 0 ? 'cursor-not-allowed bg-gray-200 text-gray-400' : 'bg-[#004D3C] text-white hover:bg-[#003d30]'"
+              :disabled="salesLines.length === 0"
+              @click="confirmSale"
+            >
+              판매 확정
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   </AppLayout>

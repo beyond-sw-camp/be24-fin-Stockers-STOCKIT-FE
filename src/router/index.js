@@ -8,6 +8,8 @@ import SignupView from '@/views/SignupView.vue'
 
 import StoreDashboardView from '@/views/store/StoreDashboardView.vue'
 import StorePosView from '@/views/store/StorePosView.vue'
+import StoreSalesHistoryView from '@/views/store/StoreSalesHistoryView.vue'
+import StoreSalesAnalysisView from '@/views/store/StoreSalesAnalysisView.vue'
 import StoreOrdersView from '@/views/store/StoreOrdersView.vue'
 import StoreInventoryView from '@/views/store/StoreInventoryView.vue'
 import StoreInboundView from '@/views/store/StoreInboundView.vue'
@@ -76,7 +78,10 @@ const router = createRouter({
     { path: '/hq/esg', name: 'hq-esg', component: EsgDashBoardView, meta: { requiresAuth: true, role: 'hq' } },
 
     { path: '/store/dashboard', name: 'store-dashboard', component: StoreDashboardView, meta: { requiresAuth: true, role: 'store' } },
-    { path: '/store/pos', name: 'store-pos', component: StorePosView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/pos', redirect: { name: 'store-sales-register' } },
+    { path: '/store/sales/register', name: 'store-sales-register', component: StorePosView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/sales/history', name: 'store-sales-history', component: StoreSalesHistoryView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/sales/analysis', name: 'store-sales-analysis', component: StoreSalesAnalysisView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/orders', name: 'store-orders', component: StoreOrdersView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/inventory', name: 'store-inventory', component: StoreInventoryView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/inbound', name: 'store-inbound', component: StoreInboundView, meta: { requiresAuth: true, role: 'store' } },

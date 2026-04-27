@@ -7,7 +7,8 @@ import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
 const auth = useAuthStore()
-const sideMenus = roleMenus.store
+const storeMenus = roleMenus.store
+const sideMenus = roleMenus.store.find((menu) => menu.label === '대시보드')?.children ?? []
 const activeSideMenu = ref('대시보드')
 
 const kpiStats = [
@@ -55,6 +56,8 @@ function handleLogout() {
 
 <template>
   <AppLayout
+    active-top-menu="대시보드"
+    :top-menus="storeMenus"
     :side-menus="sideMenus"
     v-model:active-side-menu="activeSideMenu"
     @logout="handleLogout"
@@ -201,7 +204,7 @@ function handleLogout() {
             <h3 class="text-sm font-medium text-gray-800">최근 판매 내역</h3>
             <span class="bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">LIVE</span>
           </div>
-          <button type="button" class="text-xs font-semibold text-[#004D3C] hover:underline" @click="$router.push('/store/pos')">
+          <button type="button" class="text-xs font-semibold text-[#004D3C] hover:underline" @click="$router.push('/store/sales/register')">
             POS 바로가기
           </button>
         </div>
