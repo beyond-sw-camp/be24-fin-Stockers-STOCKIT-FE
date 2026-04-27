@@ -62,6 +62,12 @@ const router = createRouter({
       component: () => import('@/views/hq/HqPurchaseOrderCreateView.vue'),
       meta: { requiresAuth: true, role: 'hq' },
     },
+    {
+      path: '/hq/purchase-orders/:id/edit',
+      name: 'hq-purchase-order-edit',
+      component: () => import('@/views/hq/HqPurchaseOrderCreateView.vue'),
+      meta: { requiresAuth: true, role: 'hq' },
+    },
     { path: '/hq/vendors', name: 'hq-vendors', component: HqVendorManagementView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/circular-inventory/candidates', name: 'hq-circular-inventory-candidates', component: HqCircularInventoryCandidateView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/circular-inventory', name: 'hq-circular-inventory', component: HqCircularInventoryView, meta: { requiresAuth: true, role: 'hq' } },
