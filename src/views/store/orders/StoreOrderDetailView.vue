@@ -33,8 +33,18 @@ function formatDateTime(iso) {
 function statusClass(status) {
   return {
     REQUESTED: 'bg-amber-100 text-amber-700',
-    APPROVED: 'bg-emerald-100 text-emerald-700',
+    APPROVED: 'bg-[#EBF5F5] text-black',
+    COMPLETED: 'bg-slate-200 text-slate-800',
     CANCELLED: 'bg-red-100 text-red-700',
+  }[status] ?? 'bg-gray-100 text-gray-600'
+}
+
+function inboundStatusClass(status) {
+  return {
+    READY_TO_SHIP: 'bg-slate-100 text-slate-700',
+    IN_TRANSIT: 'bg-blue-100 text-blue-700',
+    ARRIVED: 'bg-amber-100 text-amber-700',
+    RECEIVED: 'bg-[#EBF5F5] text-black',
   }[status] ?? 'bg-gray-100 text-gray-600'
 }
 
@@ -42,6 +52,7 @@ function historyDotClass(status) {
   return {
     REQUESTED: 'bg-amber-500',
     APPROVED: 'bg-emerald-500',
+    COMPLETED: 'bg-slate-700',
     CANCELLED: 'bg-red-600',
   }[status] ?? 'bg-gray-400'
 }
@@ -50,6 +61,7 @@ function historyTextClass(status) {
   return {
     REQUESTED: 'text-amber-700',
     APPROVED: 'text-emerald-700',
+    COMPLETED: 'text-slate-800',
     CANCELLED: 'text-red-700',
   }[status] ?? 'text-gray-700'
 }
@@ -101,7 +113,7 @@ function handleLogout() {
             <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Store Orders</p>
             <h1 class="mt-1 text-lg font-black text-gray-900">발주 상세</h1>
             <p class="mt-1 text-xs font-bold text-gray-500">
-              발주건 상세를 확인하고, 승인 대기 상태에서만 수정 또는 취소할 수 있습니다.
+              발주건 상세와 입고 진행 상태를 함께 확인하고, 승인 대기 상태에서만 수정 또는 취소할 수 있습니다.
             </p>
           </div>
           <button
@@ -125,9 +137,18 @@ function handleLogout() {
               {{ formatDateTime(selectedOrder.requestedAt) }} · {{ selectedOrder.storeName }}
             </p>
           </div>
-          <span class="inline-flex px-2 py-1 text-[10px] font-black" :class="statusClass(selectedOrder.status)">
-            {{ storeOrders.statusLabelMap[selectedOrder.status] }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex px-2 py-1 text-[10px] font-black" :class="statusClass(selectedOrder.status)">
+              {{ storeOrders.statusLabelMap[selectedOrder.status] }}
+            </span>
+            <span
+              v-if="selectedOrder.inboundStatus"
+              class="inline-flex px-2 py-1 text-[10px] font-black"
+              :class="inboundStatusClass(selectedOrder.inboundStatus)"
+            >
+              {{ storeOrders.inboundStatusLabelMap[selectedOrder.inboundStatus] }}
+            </span>
+          </div>
         </div>
 
         <div class="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)]">
@@ -240,7 +261,13 @@ function handleLogout() {
               </template>
               <template v-else>
                 <p class="border border-gray-200 bg-gray-50 px-3 py-3 text-center text-xs font-bold text-gray-500">
-                  {{ selectedOrder.status === 'APPROVED' ? '승인 완료된 발주입니다.' : '취소된 발주입니다.' }}
+                  {{
+                    selectedOrder.status === 'APPROVED'
+                      ? '승인 완료 후 입고 진행 중인 발주입니다.'
+                      : selectedOrder.status === 'COMPLETED'
+                        ? '입고까지 완료된 종료 발주입니다.'
+                        : '취소된 발주입니다.'
+                  }}
                 </p>
               </template>
 

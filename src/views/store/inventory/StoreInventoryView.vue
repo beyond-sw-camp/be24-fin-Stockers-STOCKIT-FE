@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { useInventoryStore } from '@/stores/inventory.js'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const inventory = useInventoryStore()
 
 const storeMenus = roleMenus.store
 const sideMenus = roleMenus.store.find((menu) => menu.label === '재고 관리')?.children ?? []
@@ -15,45 +17,96 @@ const sideMenus = roleMenus.store.find((menu) => menu.label === '재고 관리')
 const activeTopMenu = ref('재고 관리')
 const activeSideMenu = ref('매장 재고 조회')
 
-const storeInfo = {
-  code: 'ST-SEOUL-01',
-  name: '강남 플래그십',
-}
-
-const categoryMap = {
-  상의: ['반팔', '긴팔', '셔츠', '니트', '후드티'],
-  바지: ['청바지', '반바지', '긴바지', '츄리닝'],
-  치마: ['미니스커트', '롱스커트'],
-  아우터: ['패딩', '후드집업', '자켓', '가디건'],
-}
-
-const inventoryData = [
-  { itemCode: 'SPA-TOP-001', parentCategory: '상의', childCategory: '반팔', itemName: '코튼 베이직 반팔 티셔츠', actualStock: 64, availableStock: 58, safetyStock: 20, status: '정상', updatedAt: '2026.04.28 09:20' },
-  { itemCode: 'SPA-TOP-002', parentCategory: '상의', childCategory: '긴팔', itemName: '슬림핏 긴팔 티셔츠', actualStock: 14, availableStock: 10, safetyStock: 16, status: '부족', updatedAt: '2026.04.28 09:05' },
-  { itemCode: 'SPA-TOP-003', parentCategory: '상의', childCategory: '셔츠', itemName: '오버핏 옥스포드 셔츠', actualStock: 42, availableStock: 37, safetyStock: 18, status: '정상', updatedAt: '2026.04.28 08:50' },
-  { itemCode: 'SPA-TOP-004', parentCategory: '상의', childCategory: '니트', itemName: '라운드넥 소프트 니트', actualStock: 0, availableStock: 0, safetyStock: 12, status: '품절', updatedAt: '2026.04.28 08:30' },
-  { itemCode: 'SPA-PNT-001', parentCategory: '바지', childCategory: '청바지', itemName: '스트레이트 워싱 데님', actualStock: 23, availableStock: 20, safetyStock: 15, status: '정상', updatedAt: '2026.04.27 19:10' },
-  { itemCode: 'SPA-PNT-002', parentCategory: '바지', childCategory: '반바지', itemName: '라이트 코튼 쇼츠', actualStock: 9, availableStock: 6, safetyStock: 10, status: '부족', updatedAt: '2026.04.27 18:40' },
-  { itemCode: 'SPA-PNT-003', parentCategory: '바지', childCategory: '긴바지', itemName: '와이드 밴딩 팬츠', actualStock: 31, availableStock: 27, safetyStock: 12, status: '정상', updatedAt: '2026.04.27 18:10' },
-  { itemCode: 'SPA-SKT-001', parentCategory: '치마', childCategory: '미니스커트', itemName: 'A라인 데님 미니스커트', actualStock: 4, availableStock: 2, safetyStock: 7, status: '부족', updatedAt: '2026.04.27 17:30' },
-  { itemCode: 'SPA-SKT-002', parentCategory: '치마', childCategory: '롱스커트', itemName: '플리츠 롱스커트', actualStock: 0, availableStock: 0, safetyStock: 8, status: '품절', updatedAt: '2026.04.27 17:10' },
-  { itemCode: 'SPA-OUT-001', parentCategory: '아우터', childCategory: '패딩', itemName: '라이트 숏 패딩', actualStock: 18, availableStock: 16, safetyStock: 8, status: '정상', updatedAt: '2026.04.27 16:45' },
-  { itemCode: 'SPA-OUT-002', parentCategory: '아우터', childCategory: '후드집업', itemName: '스웨트 후드 집업', actualStock: 7, availableStock: 5, safetyStock: 9, status: '부족', updatedAt: '2026.04.27 16:15' },
-  { itemCode: 'SPA-OUT-003', parentCategory: '아우터', childCategory: '자켓', itemName: '싱글 브레스트 자켓', actualStock: 15, availableStock: 12, safetyStock: 7, status: '정상', updatedAt: '2026.04.27 15:55' },
-]
+const CATEGORY_ORDER = ['상의', '바지', '치마', '아우터']
 
 const selectedParentCategory = ref(typeof route.query.parent === 'string' ? route.query.parent : '')
 const selectedChildCategory = ref(typeof route.query.child === 'string' ? route.query.child : '')
 const selectedStatus = ref(typeof route.query.status === 'string' ? route.query.status : '')
 const searchTerm = ref(typeof route.query.search === 'string' ? route.query.search : '')
 
-const childCategoryOptions = computed(() =>
-  selectedParentCategory.value ? categoryMap[selectedParentCategory.value] : [],
-)
+function categoryRank(category) {
+  const index = CATEGORY_ORDER.indexOf(category)
+  return index === -1 ? CATEGORY_ORDER.length : index
+}
+
+function compareMainCategory(a, b) {
+  const rankDiff = categoryRank(a) - categoryRank(b)
+  if (rankDiff !== 0) return rankDiff
+  return String(a ?? '').localeCompare(String(b ?? ''), 'ko')
+}
+
+function toItemCode(productId, mainCategory) {
+  if (productId) {
+    const match = productId.match(/^PRD-([A-Z]+)-[A-Z]+-(\d+)$/)
+    if (match) return `SPA-${match[1]}-${match[2]}`
+  }
+
+  const fallbackMap = {
+    상의: 'TOP',
+    바지: 'PNT',
+    치마: 'SKT',
+    아우터: 'OUT',
+  }
+  return `SPA-${fallbackMap[mainCategory] ?? 'SKU'}-000`
+}
+
+const inventoryRows = computed(() => {
+  const grouped = new Map()
+
+  inventory.skus.forEach((sku) => {
+    const itemCode = toItemCode(sku.productId, sku.mainCategory)
+    const existing = grouped.get(itemCode) ?? {
+      itemCode,
+      parentCategory: sku.mainCategory,
+      childCategory: sku.subCategory,
+      itemName: sku.productName,
+      actualStock: 0,
+      availableStock: 0,
+      safetyStock: 0,
+      updatedAt: new Date().toISOString(),
+    }
+
+    existing.actualStock += sku.stock
+    existing.availableStock += sku.stock
+    existing.safetyStock += sku.safetyStock
+    grouped.set(itemCode, existing)
+  })
+
+  return [...grouped.values()]
+    .map((item) => ({
+      ...item,
+      status:
+        item.actualStock === 0
+          ? '품절'
+          : item.actualStock <= item.safetyStock
+            ? '부족'
+            : '정상',
+    }))
+    .sort((a, b) => (
+      compareMainCategory(a.parentCategory, b.parentCategory)
+      || a.childCategory.localeCompare(b.childCategory, 'ko')
+      || a.itemName.localeCompare(b.itemName, 'ko')
+    ))
+})
+
+const parentCategoryOptions = computed(() => [
+  ...new Set(inventoryRows.value.map((item) => item.parentCategory)),
+].sort(compareMainCategory))
+
+const childCategoryOptions = computed(() => {
+  if (!selectedParentCategory.value) return []
+  return [
+    ...new Set(
+      inventoryRows.value
+        .filter((item) => item.parentCategory === selectedParentCategory.value)
+        .map((item) => item.childCategory),
+    ),
+  ].sort((a, b) => a.localeCompare(b, 'ko'))
+})
 
 const filteredInventory = computed(() => {
   const keyword = searchTerm.value.trim().toLowerCase()
-  return inventoryData.filter((item) => {
+  return inventoryRows.value.filter((item) => {
     const matchesParent = !selectedParentCategory.value || item.parentCategory === selectedParentCategory.value
     const matchesChild = !selectedChildCategory.value || item.childCategory === selectedChildCategory.value
     const matchesStatus = !selectedStatus.value || item.status === selectedStatus.value
@@ -73,6 +126,13 @@ const today = new Intl.DateTimeFormat('ko-KR', {
   month: '2-digit',
   day: '2-digit',
 }).format(new Date())
+
+function formatDateTime(iso) {
+  if (!iso) return '-'
+  const date = new Date(iso)
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 function handleParentCategoryChange() {
   selectedChildCategory.value = ''
@@ -124,7 +184,7 @@ function handleLogout() {
             <h1 class="mt-1 text-lg font-black text-gray-900">매장 재고 조회</h1>
           </div>
           <div class="text-right text-[11px] font-bold text-gray-500">
-            <p>{{ storeInfo.code }} · {{ storeInfo.name }}</p>
+            <p>{{ auth.user?.storeId ?? 'STORE' }} · {{ auth.user?.storeName ?? '매장' }}</p>
             <p class="mt-1 text-gray-400">기준일 {{ today }} · 조회 {{ filteredInventory.length }}건</p>
           </div>
         </div>
@@ -148,7 +208,7 @@ function handleLogout() {
               @change="handleParentCategoryChange"
             >
               <option value="">전체</option>
-              <option v-for="category in Object.keys(categoryMap)" :key="category" :value="category">
+              <option v-for="category in parentCategoryOptions" :key="category" :value="category">
                 {{ category }}
               </option>
             </select>
@@ -227,7 +287,7 @@ function handleLogout() {
                       {{ item.status }}
                     </span>
                   </td>
-                  <td class="px-3 py-3 font-bold text-gray-500">{{ item.updatedAt }}</td>
+                  <td class="px-3 py-3 font-bold text-gray-500">{{ formatDateTime(item.updatedAt) }}</td>
                 </tr>
                 <tr v-if="filteredInventory.length === 0">
                   <td colspan="8" class="px-3 py-14 text-center text-sm font-bold text-gray-400">

@@ -6,7 +6,7 @@ import DevLoginView from '@/views/DevLoginView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 
-import StoreDashboardView from '@/views/store/StoreDashboardView.vue'
+import StoreDashboardView from '@/views/store/dashboard/StoreDashboardView.vue'
 import StorePosView from '@/views/store/sales/StorePosView.vue'
 import StoreSalesHistoryView from '@/views/store/sales/StoreSalesHistoryView.vue'
 import StoreSalesAnalysisView from '@/views/store/sales/StoreSalesAnalysisView.vue'
@@ -14,9 +14,11 @@ import StoreOrderRequestView from '@/views/store/orders/StoreOrderRequestView.vu
 import StoreOrderHistoryView from '@/views/store/orders/StoreOrderHistoryView.vue'
 import StoreOrderAnalysisView from '@/views/store/orders/StoreOrderAnalysisView.vue'
 import StoreOrderDetailView from '@/views/store/orders/StoreOrderDetailView.vue'
-import StoreInventoryView from '@/views/store/StoreInventoryView.vue'
-import StoreInventorySkuDetailView from '@/views/store/StoreInventorySkuDetailView.vue'
-import StoreInboundView from '@/views/store/StoreInboundView.vue'
+import StoreInboundListView from '@/views/store/inbound/StoreInboundListView.vue'
+import StoreInboundDetailView from '@/views/store/inbound/StoreInboundDetailView.vue'
+import StoreInboundAnalysisView from '@/views/store/inbound/StoreInboundAnalysisView.vue'
+import StoreInventoryView from '@/views/store/inventory/StoreInventoryView.vue'
+import StoreInventorySkuDetailView from '@/views/store/inventory/StoreInventorySkuDetailView.vue'
 import StoreAiReportView from '@/views/store/StoreAiReportView.vue'
 import StoreStatsView from '@/views/store/stats/StoreStatsView.vue'
 import StoreSalesStatsView from '@/views/store/stats/StoreSalesStatsView.vue'
@@ -166,9 +168,12 @@ const router = createRouter({
       component: StoreInventorySkuDetailView,
       meta: { requiresAuth: true, role: 'store' },
     },
-    { path: '/store/inbound', name: 'store-inbound', component: StoreInboundView, meta: { requiresAuth: true, role: 'store' } },
-    { path: '/store/stats', name: 'store-stats', component: StoreStatsView, meta: { requiresAuth: true, role: 'store' } },
-    { path: '/store/stats/sales', name: 'store-stats-sales', component: StoreSalesStatsView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/inbound', redirect: { name: 'store-inbound-list' } },
+    { path: '/store/inbound/list', name: 'store-inbound-list', component: StoreInboundListView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/inbound/list/:id', name: 'store-inbound-detail', component: StoreInboundDetailView, meta: { requiresAuth: true, role: 'store' } },
+    { path: '/store/inbound/history', redirect: { name: 'store-inbound-list' } },
+    { path: '/store/inbound/history/:id', redirect: (to) => ({ name: 'store-inbound-detail', params: { id: to.params.id } }) },
+    { path: '/store/inbound/analysis', name: 'store-inbound-analysis', component: StoreInboundAnalysisView, meta: { requiresAuth: true, role: 'store' } },
     { path: '/store/ai-report', name: 'store-ai-report', component: StoreAiReportView, meta: { requiresAuth: true, role: 'store' } },
 
     {
