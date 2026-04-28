@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useInventoryStore } from '@/stores/inventory.js'
 
-const STORAGE_KEY = 'stockit_store_orders_v1'
+const STORAGE_KEY = 'stockit_store_orders_v3'
 const DEFAULT_STORE_ID = 'STORE-GANGNAM-01'
 const DEFAULT_STORE_NAME = '강남 서초점'
 const DEFAULT_REQUESTED_BY = '김도현'
@@ -10,7 +10,15 @@ const DEFAULT_REQUESTED_BY = '김도현'
 const STATUS_LABEL = {
   REQUESTED: '승인 대기',
   APPROVED: '승인 완료',
+  COMPLETED: '완료',
   CANCELLED: '취소',
+}
+
+const INBOUND_STATUS_LABEL = {
+  READY_TO_SHIP: '배송 준비중',
+  IN_TRANSIT: '배송 중',
+  ARRIVED: '배송 완료',
+  RECEIVED: '입고 완료',
 }
 
 const CATEGORY_ORDER = ['상의', '바지', '치마', '아우터']
@@ -41,12 +49,48 @@ function toItemCode(productId, mainCategory) {
   return `SPA-${fallbackMap[mainCategory] ?? 'SKU'}-000`
 }
 
+function createSeedItem({
+  orderId,
+  skuId,
+  productId,
+  productName,
+  mainCategory,
+  subCategory,
+  color,
+  size,
+  unitPrice,
+  currentStoreStock,
+  safetyStock,
+  requestedQuantity,
+  inboundExpectedQuantity = 0,
+}) {
+  return {
+    orderId,
+    skuId,
+    productId,
+    itemCode: toItemCode(productId, mainCategory),
+    productName,
+    mainCategory,
+    subCategory,
+    color,
+    size,
+    unitPrice,
+    currentStoreStock,
+    inboundExpectedQuantity,
+    availableStoreStock: currentStoreStock + inboundExpectedQuantity,
+    safetyStock,
+    recommendedQuantity: Math.max(0, safetyStock - currentStoreStock),
+    requestedQuantity,
+    expectedInboundQuantity: requestedQuantity,
+  }
+}
+
 const SEED_ORDERS = [
   {
-    orderId: 'SOR-20260426-001',
+    orderId: 'SOR-20260429-001',
     storeId: DEFAULT_STORE_ID,
     storeName: DEFAULT_STORE_NAME,
-    requestedAt: '2026-04-26T09:20:00',
+    requestedAt: '2026-04-29T09:20:00',
     requestedBy: DEFAULT_REQUESTED_BY,
     status: 'REQUESTED',
     totalSkuCount: 2,
@@ -55,14 +99,17 @@ const SEED_ORDERS = [
     cancelReason: '',
     approvalPolicyNote: '익일 12시 배치 승인 대상',
     statusHistory: [
-      { status: 'REQUESTED', at: '2026-04-26T09:20:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'REQUESTED', at: '2026-04-29T09:20:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
     ],
+    inboundStatus: null,
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [],
     items: [
-      {
-        orderId: 'SOR-20260426-001',
+      createSeedItem({
+        orderId: 'SOR-20260429-001',
         skuId: 'SKU-TOP-SS-001-WHT-L',
         productId: 'PRD-TOP-SS-001',
-        itemCode: 'SPA-TOP-001',
         productName: '에센셜 코튼 반팔 티셔츠',
         mainCategory: '상의',
         subCategory: '반팔',
@@ -70,17 +117,14 @@ const SEED_ORDERS = [
         size: 'L',
         unitPrice: 29000,
         currentStoreStock: 7,
-        inboundExpectedQuantity: 5,
-        availableStoreStock: 12,
         safetyStock: 8,
-        recommendedQuantity: 1,
         requestedQuantity: 4,
-      },
-      {
-        orderId: 'SOR-20260426-001',
+        inboundExpectedQuantity: 5,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260429-001',
         skuId: 'SKU-OUT-CD-004-IVR-S',
         productId: 'PRD-OUT-CD-004',
-        itemCode: 'SPA-OUT-004',
         productName: '브이넥 가디건',
         mainCategory: '아우터',
         subCategory: '가디건',
@@ -88,19 +132,16 @@ const SEED_ORDERS = [
         size: 'S',
         unitPrice: 57000,
         currentStoreStock: 11,
-        inboundExpectedQuantity: 0,
-        availableStoreStock: 11,
         safetyStock: 4,
-        recommendedQuantity: 0,
         requestedQuantity: 3,
-      },
+      }),
     ],
   },
   {
-    orderId: 'SOR-20260425-001',
+    orderId: 'SOR-20260428-001',
     storeId: DEFAULT_STORE_ID,
     storeName: DEFAULT_STORE_NAME,
-    requestedAt: '2026-04-25T10:10:00',
+    requestedAt: '2026-04-28T10:10:00',
     requestedBy: DEFAULT_REQUESTED_BY,
     status: 'APPROVED',
     totalSkuCount: 1,
@@ -109,15 +150,20 @@ const SEED_ORDERS = [
     cancelReason: '',
     approvalPolicyNote: '익일 12시 배치 승인 대상',
     statusHistory: [
-      { status: 'REQUESTED', at: '2026-04-25T10:10:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
-      { status: 'APPROVED', at: '2026-04-26T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+      { status: 'REQUESTED', at: '2026-04-28T10:10:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-29T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'READY_TO_SHIP',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-29T12:01:00', byName: '시스템', note: '창고 출고 준비 대기' },
     ],
     items: [
-      {
-        orderId: 'SOR-20260425-001',
+      createSeedItem({
+        orderId: 'SOR-20260428-001',
         skuId: 'SKU-PNT-DN-001-IND-30',
         productId: 'PRD-PNT-DN-001',
-        itemCode: 'SPA-PNT-001',
         productName: '스트레이트 청바지',
         mainCategory: '바지',
         subCategory: '청바지',
@@ -125,19 +171,417 @@ const SEED_ORDERS = [
         size: '30',
         unitPrice: 69000,
         currentStoreStock: 18,
-        inboundExpectedQuantity: 2,
-        availableStoreStock: 20,
         safetyStock: 5,
-        recommendedQuantity: 0,
         requestedQuantity: 6,
-      },
+        inboundExpectedQuantity: 2,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260427-001',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-27T11:05:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'APPROVED',
+    totalSkuCount: 2,
+    totalRequestedQuantity: 9,
+    memo: '행사 진열용 후드티와 패딩 출고 준비',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-27T11:05:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-28T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'READY_TO_SHIP',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-28T12:10:00', byName: '시스템', note: '창고 출고 준비 완료' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260427-001',
+        skuId: 'SKU-TOP-HD-004-GRY-L',
+        productId: 'PRD-TOP-HD-004',
+        productName: '클래식 후드티',
+        mainCategory: '상의',
+        subCategory: '후드티',
+        color: '그레이',
+        size: 'L',
+        unitPrice: 62000,
+        currentStoreStock: 10,
+        safetyStock: 4,
+        requestedQuantity: 5,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260427-001',
+        skuId: 'SKU-OUT-PD-001-KHK-M',
+        productId: 'PRD-OUT-PD-001',
+        productName: '라이트 패딩 점퍼',
+        mainCategory: '아우터',
+        subCategory: '패딩',
+        color: '카키',
+        size: 'M',
+        unitPrice: 99000,
+        currentStoreStock: 5,
+        safetyStock: 3,
+        requestedQuantity: 4,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260426-001',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-26T15:10:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'APPROVED',
+    totalSkuCount: 2,
+    totalRequestedQuantity: 10,
+    memo: '진열 교체용 셔츠와 데님 보충',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-26T15:10:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-27T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'IN_TRANSIT',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-27T12:05:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-27T18:20:00', byName: '서울 1센터', note: '배송 출발 처리' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260426-001',
+        skuId: 'SKU-TOP-SH-002-BLU-M',
+        productId: 'PRD-TOP-SH-002',
+        productName: '오버핏 데님 셔츠',
+        mainCategory: '상의',
+        subCategory: '셔츠',
+        color: '블루',
+        size: 'M',
+        unitPrice: 59000,
+        currentStoreStock: 14,
+        safetyStock: 5,
+        requestedQuantity: 4,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260426-001',
+        skuId: 'SKU-PNT-DN-001-IND-28',
+        productId: 'PRD-PNT-DN-001',
+        productName: '스트레이트 청바지',
+        mainCategory: '바지',
+        subCategory: '청바지',
+        color: '인디고',
+        size: '28',
+        unitPrice: 69000,
+        currentStoreStock: 12,
+        safetyStock: 5,
+        requestedQuantity: 6,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260425-001',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-25T09:40:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'APPROVED',
+    totalSkuCount: 1,
+    totalRequestedQuantity: 7,
+    memo: '롱스커트 배송 출발 완료',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-25T09:40:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-26T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'IN_TRANSIT',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-26T12:05:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-26T17:00:00', byName: '서울 1센터', note: '배송 출발 처리' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260425-001',
+        skuId: 'SKU-SKT-LG-002-NVY-M',
+        productId: 'PRD-SKT-LG-002',
+        productName: '플리츠 롱스커트',
+        mainCategory: '치마',
+        subCategory: '롱스커트',
+        color: '네이비',
+        size: 'M',
+        unitPrice: 52000,
+        currentStoreStock: 8,
+        safetyStock: 4,
+        requestedQuantity: 7,
+      }),
     ],
   },
   {
     orderId: 'SOR-20260424-001',
     storeId: DEFAULT_STORE_ID,
     storeName: DEFAULT_STORE_NAME,
-    requestedAt: '2026-04-24T14:45:00',
+    requestedAt: '2026-04-24T16:30:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'APPROVED',
+    totalSkuCount: 2,
+    totalRequestedQuantity: 9,
+    memo: '오늘 도착 예정 입고 대기',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-24T16:30:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-25T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'ARRIVED',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-25T12:01:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-25T18:20:00', byName: '서울 1센터', note: '배송 출발 처리' },
+      { status: 'ARRIVED', at: '2026-04-26T09:10:00', byName: DEFAULT_STORE_NAME, note: '매장 도착 확인' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260424-001',
+        skuId: 'SKU-SKT-MN-001-BLK-S',
+        productId: 'PRD-SKT-MN-001',
+        productName: 'A라인 미니스커트',
+        mainCategory: '치마',
+        subCategory: '미니스커트',
+        color: '블랙',
+        size: 'S',
+        unitPrice: 43000,
+        currentStoreStock: 6,
+        safetyStock: 4,
+        requestedQuantity: 4,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260424-001',
+        skuId: 'SKU-OUT-HZ-002-GRY-L',
+        productId: 'PRD-OUT-HZ-002',
+        productName: '코튼 후드집업',
+        mainCategory: '아우터',
+        subCategory: '후드집업',
+        color: '그레이',
+        size: 'L',
+        unitPrice: 65000,
+        currentStoreStock: 13,
+        safetyStock: 4,
+        requestedQuantity: 5,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260423-002',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-23T14:20:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'APPROVED',
+    totalSkuCount: 1,
+    totalRequestedQuantity: 6,
+    memo: '패딩 도착 후 검수 대기',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-23T14:20:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-24T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+    ],
+    inboundStatus: 'ARRIVED',
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-24T12:01:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-24T17:30:00', byName: '서울 1센터', note: '배송 출발 처리' },
+      { status: 'ARRIVED', at: '2026-04-25T08:50:00', byName: DEFAULT_STORE_NAME, note: '매장 도착 확인' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260423-002',
+        skuId: 'SKU-OUT-PD-001-KHK-M',
+        productId: 'PRD-OUT-PD-001',
+        productName: '라이트 패딩 점퍼',
+        mainCategory: '아우터',
+        subCategory: '패딩',
+        color: '카키',
+        size: 'M',
+        unitPrice: 99000,
+        currentStoreStock: 5,
+        safetyStock: 3,
+        requestedQuantity: 6,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260422-002',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-22T09:00:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'COMPLETED',
+    totalSkuCount: 2,
+    totalRequestedQuantity: 7,
+    memo: '이전 주말 행사분 입고 완료',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-22T09:00:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-23T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+      { status: 'COMPLETED', at: '2026-04-25T10:20:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고까지 최종 완료' },
+    ],
+    inboundStatus: 'RECEIVED',
+    inboundCompletedAt: '2026-04-25T10:20:00',
+    inboundConfirmedBy: DEFAULT_REQUESTED_BY,
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-23T12:01:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-23T18:30:00', byName: '서울 1센터', note: '배송 출발 처리' },
+      { status: 'ARRIVED', at: '2026-04-24T08:40:00', byName: DEFAULT_STORE_NAME, note: '매장 도착 확인' },
+      { status: 'RECEIVED', at: '2026-04-25T10:20:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고 확정 완료' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260422-002',
+        skuId: 'SKU-TOP-SH-002-BLU-M',
+        productId: 'PRD-TOP-SH-002',
+        productName: '오버핏 데님 셔츠',
+        mainCategory: '상의',
+        subCategory: '셔츠',
+        color: '블루',
+        size: 'M',
+        unitPrice: 59000,
+        currentStoreStock: 14,
+        safetyStock: 5,
+        requestedQuantity: 3,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260422-002',
+        skuId: 'SKU-PNT-LG-002-BEI-M',
+        productId: 'PRD-PNT-LG-002',
+        productName: '와이드 린넨 팬츠',
+        mainCategory: '바지',
+        subCategory: '긴바지',
+        color: '베이지',
+        size: 'M',
+        unitPrice: 54000,
+        currentStoreStock: 9,
+        safetyStock: 4,
+        requestedQuantity: 4,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260421-002',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-21T13:25:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'COMPLETED',
+    totalSkuCount: 1,
+    totalRequestedQuantity: 5,
+    memo: '가디건 긴급 보충 건 입고 완료',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-21T13:25:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-22T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+      { status: 'COMPLETED', at: '2026-04-24T09:55:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고까지 최종 완료' },
+    ],
+    inboundStatus: 'RECEIVED',
+    inboundCompletedAt: '2026-04-24T09:55:00',
+    inboundConfirmedBy: DEFAULT_REQUESTED_BY,
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-22T12:02:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-22T18:10:00', byName: '서울 1센터', note: '배송 출발 처리' },
+      { status: 'ARRIVED', at: '2026-04-23T09:00:00', byName: DEFAULT_STORE_NAME, note: '매장 도착 확인' },
+      { status: 'RECEIVED', at: '2026-04-24T09:55:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고 확정 완료' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260421-002',
+        skuId: 'SKU-OUT-CD-004-IVR-S',
+        productId: 'PRD-OUT-CD-004',
+        productName: '브이넥 가디건',
+        mainCategory: '아우터',
+        subCategory: '가디건',
+        color: '아이보리',
+        size: 'S',
+        unitPrice: 57000,
+        currentStoreStock: 11,
+        safetyStock: 4,
+        requestedQuantity: 5,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260420-001',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-20T10:45:00',
+    requestedBy: DEFAULT_REQUESTED_BY,
+    status: 'COMPLETED',
+    totalSkuCount: 2,
+    totalRequestedQuantity: 8,
+    memo: '상의/치마 묶음 발주 입고 종료',
+    cancelReason: '',
+    approvalPolicyNote: '익일 12시 배치 승인 대상',
+    statusHistory: [
+      { status: 'REQUESTED', at: '2026-04-20T10:45:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'APPROVED', at: '2026-04-21T12:00:00', byName: '시스템', note: '배치 승인 완료' },
+      { status: 'COMPLETED', at: '2026-04-23T11:35:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고까지 최종 완료' },
+    ],
+    inboundStatus: 'RECEIVED',
+    inboundCompletedAt: '2026-04-23T11:35:00',
+    inboundConfirmedBy: DEFAULT_REQUESTED_BY,
+    inboundStatusHistory: [
+      { status: 'READY_TO_SHIP', at: '2026-04-21T12:04:00', byName: '시스템', note: '창고 출고 준비 완료' },
+      { status: 'IN_TRANSIT', at: '2026-04-21T17:40:00', byName: '서울 1센터', note: '배송 출발 처리' },
+      { status: 'ARRIVED', at: '2026-04-22T08:15:00', byName: DEFAULT_STORE_NAME, note: '매장 도착 확인' },
+      { status: 'RECEIVED', at: '2026-04-23T11:35:00', byName: DEFAULT_REQUESTED_BY, note: '매장 입고 확정 완료' },
+    ],
+    items: [
+      createSeedItem({
+        orderId: 'SOR-20260420-001',
+        skuId: 'SKU-TOP-SS-001-BLK-S',
+        productId: 'PRD-TOP-SS-001',
+        productName: '에센셜 코튼 반팔 티셔츠',
+        mainCategory: '상의',
+        subCategory: '반팔',
+        color: '블랙',
+        size: 'S',
+        unitPrice: 29000,
+        currentStoreStock: 22,
+        safetyStock: 6,
+        requestedQuantity: 4,
+      }),
+      createSeedItem({
+        orderId: 'SOR-20260420-001',
+        skuId: 'SKU-SKT-LG-002-NVY-M',
+        productId: 'PRD-SKT-LG-002',
+        productName: '플리츠 롱스커트',
+        mainCategory: '치마',
+        subCategory: '롱스커트',
+        color: '네이비',
+        size: 'M',
+        unitPrice: 52000,
+        currentStoreStock: 8,
+        safetyStock: 4,
+        requestedQuantity: 4,
+      }),
+    ],
+  },
+  {
+    orderId: 'SOR-20260419-001',
+    storeId: DEFAULT_STORE_ID,
+    storeName: DEFAULT_STORE_NAME,
+    requestedAt: '2026-04-19T14:45:00',
     requestedBy: DEFAULT_REQUESTED_BY,
     status: 'CANCELLED',
     totalSkuCount: 1,
@@ -146,15 +590,18 @@ const SEED_ORDERS = [
     cancelReason: '동일 SKU를 다른 발주건으로 다시 요청하여 취소',
     approvalPolicyNote: '익일 12시 배치 승인 대상',
     statusHistory: [
-      { status: 'REQUESTED', at: '2026-04-24T14:45:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
-      { status: 'CANCELLED', at: '2026-04-24T16:12:00', byName: DEFAULT_REQUESTED_BY, note: '매장 요청 취소' },
+      { status: 'REQUESTED', at: '2026-04-19T14:45:00', byName: DEFAULT_REQUESTED_BY, note: '매장 발주 요청 등록' },
+      { status: 'CANCELLED', at: '2026-04-19T16:12:00', byName: DEFAULT_REQUESTED_BY, note: '매장 요청 취소' },
     ],
+    inboundStatus: null,
+    inboundCompletedAt: '',
+    inboundConfirmedBy: '',
+    inboundStatusHistory: [],
     items: [
-      {
-        orderId: 'SOR-20260424-001',
+      createSeedItem({
+        orderId: 'SOR-20260419-001',
         skuId: 'SKU-OUT-JK-003-BLK-M',
         productId: 'PRD-OUT-JK-003',
-        itemCode: 'SPA-OUT-003',
         productName: '싱글 자켓',
         mainCategory: '아우터',
         subCategory: '자켓',
@@ -162,12 +609,10 @@ const SEED_ORDERS = [
         size: 'M',
         unitPrice: 89000,
         currentStoreStock: 4,
-        inboundExpectedQuantity: 1,
-        availableStoreStock: 5,
         safetyStock: 3,
-        recommendedQuantity: 0,
         requestedQuantity: 2,
-      },
+        inboundExpectedQuantity: 1,
+      }),
     ],
   },
 ]
@@ -203,24 +648,47 @@ function inboundExpectedForSku(sku) {
   return Math.max(0, sku.safetyStock - sku.stock)
 }
 
+function normalizeInboundHistory(order) {
+  if (Array.isArray(order.inboundStatusHistory) && order.inboundStatusHistory.length > 0) {
+    return order.inboundStatusHistory
+  }
+
+  if (order.status === 'APPROVED' || order.status === 'COMPLETED') {
+    return [
+      {
+        status: order.inboundStatus ?? 'READY_TO_SHIP',
+        at: order.requestedAt,
+        byName: '시스템',
+        note: '입고 흐름 생성',
+      },
+    ]
+  }
+
+  return []
+}
+
 function normalizeOrder(order) {
   const items = (order.items ?? []).map((item) => {
     const currentStoreStock = Number(item.currentStoreStock ?? 0)
     const inboundExpectedQuantity = Number(item.inboundExpectedQuantity ?? 0)
+    const requestedQuantity = Number(item.requestedQuantity ?? 0)
     return {
       orderId: order.orderId,
       ...item,
       itemCode: item.itemCode ?? toItemCode(item.productId, item.mainCategory),
-      requestedQuantity: Number(item.requestedQuantity ?? 0),
+      requestedQuantity,
+      expectedInboundQuantity: Number(item.expectedInboundQuantity ?? requestedQuantity),
       currentStoreStock,
       inboundExpectedQuantity,
-      availableStoreStock: Number(item.availableStoreStock ?? currentStoreStock + inboundExpectedQuantity),
+      availableStoreStock: Number(
+        item.availableStoreStock ?? currentStoreStock + inboundExpectedQuantity,
+      ),
       safetyStock: Number(item.safetyStock ?? 0),
       recommendedQuantity: Number(item.recommendedQuantity ?? 0),
     }
   })
 
-  return {
+  const normalized = {
     ...order,
     storeId: order.storeId ?? DEFAULT_STORE_ID,
     storeName: order.storeName ?? DEFAULT_STORE_NAME,
@@ -238,19 +706,47 @@ function normalizeOrder(order) {
         ? order.statusHistory
         : [{ status: order.status ?? 'REQUESTED', at: order.requestedAt, byName: order.requestedBy ?? DEFAULT_REQUESTED_BY, note: '' }],
     items,
+    inboundStatus:
+      order.status === 'APPROVED' || order.status === 'COMPLETED'
+        ? order.inboundStatus ?? 'READY_TO_SHIP'
+        : null,
+    inboundCompletedAt: order.inboundCompletedAt ?? '',
+    inboundConfirmedBy: order.inboundConfirmedBy ?? '',
   }
+
+  normalized.inboundStatusHistory = normalizeInboundHistory(normalized)
+  return normalized
+}
+
+function appendHistory(list, entry) {
+  return [...list, entry]
+}
+
+function headlineLabel(order) {
+  if (!order || order.items.length === 0) return '-'
+  return order.items.length > 1
+    ? `${order.items[0].productName} 외 ${order.items.length - 1}건`
+    : order.items[0].productName
 }
 
 export const useStoreOrdersStore = defineStore('storeOrders', () => {
   const inventory = useInventoryStore()
   const orders = ref(loadOrders().map(normalizeOrder))
+
   const activeStatusTab = ref('전체')
   const searchKeyword = ref('')
   const dateFrom = ref('')
   const dateTo = ref('')
   const sortBy = ref('latest')
+
   const requestSortBy = ref('priority')
   const selectedOrderId = ref('')
+
+  const inboundActiveStatusTab = ref('전체')
+  const inboundSearchKeyword = ref('')
+  const inboundDateFrom = ref('')
+  const inboundDateTo = ref('')
+  const inboundSortBy = ref('latest')
 
   if (orders.value.length === 0) {
     orders.value = SEED_ORDERS.map(normalizeOrder)
@@ -271,12 +767,9 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     const keyword = searchKeyword.value.trim().toLowerCase()
     if (keyword) {
       list = list.filter((order) => {
-        const headline = order.items.length > 1
-          ? `${order.items[0].productName} 외 ${order.items.length - 1}건`
-          : order.items[0]?.productName ?? ''
         const haystack = [
           order.orderId,
-          headline,
+          headlineLabel(order),
           order.memo,
           ...order.items.map((item) =>
             [item.productName, item.mainCategory, item.subCategory, item.color, item.size].join(' ')),
@@ -317,6 +810,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     전체: orders.value.length,
     REQUESTED: orders.value.filter((order) => order.status === 'REQUESTED').length,
     APPROVED: orders.value.filter((order) => order.status === 'APPROVED').length,
+    COMPLETED: orders.value.filter((order) => order.status === 'COMPLETED').length,
     CANCELLED: orders.value.filter((order) => order.status === 'CANCELLED').length,
   }))
 
@@ -325,6 +819,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     totalRequestedQuantity: orders.value.reduce((sum, order) => sum + order.totalRequestedQuantity, 0),
     requestedCount: orders.value.filter((order) => order.status === 'REQUESTED').length,
     approvedCount: orders.value.filter((order) => order.status === 'APPROVED').length,
+    completedCount: orders.value.filter((order) => order.status === 'COMPLETED').length,
   }))
 
   const analytics = computed(() => {
@@ -416,6 +911,130 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
       }),
   )
 
+  const inboundTargetOrders = computed(() =>
+    orders.value.filter(
+      (order) => (order.status === 'APPROVED' || order.status === 'COMPLETED') && order.inboundStatus,
+    ),
+  )
+
+  const inboundListOrders = computed(() => inboundTargetOrders.value)
+
+  const inboundHistoryOrders = computed(() =>
+    inboundTargetOrders.value.filter((order) => order.status === 'COMPLETED' && order.inboundStatus === 'RECEIVED'),
+  )
+
+  function filterInboundOrders(baseOrders, includeReceived = false) {
+    let list = [...baseOrders]
+
+    if (includeReceived && inboundActiveStatusTab.value === 'RECEIVED') {
+      list = list.filter((order) => order.status === 'COMPLETED' && order.inboundStatus === 'RECEIVED')
+    } else if (!includeReceived && inboundActiveStatusTab.value !== '전체') {
+      list = list.filter((order) => order.inboundStatus === inboundActiveStatusTab.value)
+    }
+
+    const keyword = inboundSearchKeyword.value.trim().toLowerCase()
+    if (keyword) {
+      list = list.filter((order) => {
+        const haystack = [
+          order.orderId,
+          headlineLabel(order),
+          order.memo,
+          ...order.items.map((item) =>
+            [item.itemCode, item.productName, item.mainCategory, item.subCategory].join(' ')),
+        ].join(' ').toLowerCase()
+        return haystack.includes(keyword)
+      })
+    }
+
+    const dateField = includeReceived ? 'inboundCompletedAt' : 'requestedAt'
+    if (inboundDateFrom.value) {
+      list = list.filter((order) => (order[dateField] || order.requestedAt).slice(0, 10) >= inboundDateFrom.value)
+    }
+    if (inboundDateTo.value) {
+      list = list.filter((order) => (order[dateField] || order.requestedAt).slice(0, 10) <= inboundDateTo.value)
+    }
+
+    const sorted = [...list]
+    switch (inboundSortBy.value) {
+      case 'oldest':
+        sorted.sort((a, b) => a.requestedAt.localeCompare(b.requestedAt))
+        break
+      case 'qtyDesc':
+        sorted.sort((a, b) => b.totalRequestedQuantity - a.totalRequestedQuantity)
+        break
+      case 'qtyAsc':
+        sorted.sort((a, b) => a.totalRequestedQuantity - b.totalRequestedQuantity)
+        break
+      default:
+        sorted.sort((a, b) => {
+          const dateA = a.inboundStatus === 'RECEIVED' ? a.inboundCompletedAt || a.requestedAt : a.requestedAt
+          const dateB = b.inboundStatus === 'RECEIVED' ? b.inboundCompletedAt || b.requestedAt : b.requestedAt
+          return dateB.localeCompare(dateA)
+        })
+    }
+    return sorted
+  }
+
+  const filteredInboundList = computed(() => filterInboundOrders(inboundListOrders.value))
+  const filteredInboundHistory = computed(() => filterInboundOrders(inboundHistoryOrders.value, true))
+
+  const inboundStatusCounts = computed(() => ({
+    전체: inboundListOrders.value.length,
+    READY_TO_SHIP: inboundListOrders.value.filter((order) => order.inboundStatus === 'READY_TO_SHIP').length,
+    IN_TRANSIT: inboundListOrders.value.filter((order) => order.inboundStatus === 'IN_TRANSIT').length,
+    ARRIVED: inboundListOrders.value.filter((order) => order.inboundStatus === 'ARRIVED').length,
+    RECEIVED: inboundListOrders.value.filter((order) => order.status === 'COMPLETED' && order.inboundStatus === 'RECEIVED').length,
+  }))
+
+  const inboundSummary = computed(() => ({
+    totalCompletedOrders: inboundHistoryOrders.value.length,
+    totalCompletedQuantity: inboundHistoryOrders.value.reduce(
+      (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.expectedInboundQuantity, 0),
+      0,
+    ),
+    readyToShipCount: inboundListOrders.value.filter((order) => order.inboundStatus === 'READY_TO_SHIP').length,
+    inTransitCount: inboundListOrders.value.filter((order) => order.inboundStatus === 'IN_TRANSIT').length,
+    arrivedCount: inboundListOrders.value.filter((order) => order.inboundStatus === 'ARRIVED').length,
+    receivedCount: inboundHistoryOrders.value.length,
+  }))
+
+  const inboundAnalytics = computed(() => {
+    const categoryMap = new Map()
+    const statusCountMap = {
+      READY_TO_SHIP: 0,
+      IN_TRANSIT: 0,
+      ARRIVED: 0,
+      RECEIVED: 0,
+    }
+
+    for (const order of inboundTargetOrders.value) {
+      if (order.inboundStatus && statusCountMap[order.inboundStatus] !== undefined) {
+        statusCountMap[order.inboundStatus] += 1
+      }
+
+      for (const item of order.items) {
+        const categoryKey = `${item.mainCategory}|${item.subCategory}`
+        const previous = categoryMap.get(categoryKey) ?? {
+          label: `${item.mainCategory} > ${item.subCategory}`,
+          mainCategory: item.mainCategory,
+          subCategory: item.subCategory,
+          quantity: 0,
+        }
+        previous.quantity += item.expectedInboundQuantity
+        categoryMap.set(categoryKey, previous)
+      }
+    }
+
+    return {
+      statusCounts: statusCountMap,
+      categoryBreakdown: [...categoryMap.values()].sort((a, b) => (
+        compareMainCategory(a.mainCategory, b.mainCategory)
+        || a.subCategory.localeCompare(b.subCategory, 'ko')
+        || b.quantity - a.quantity
+      )),
+    }
+  })
+
   function persist() {
     saveOrders(orders.value)
   }
@@ -461,6 +1080,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         safetyStock: sku.safetyStock,
         recommendedQuantity: Math.max(0, sku.safetyStock - sku.stock),
         requestedQuantity,
+        expectedInboundQuantity: requestedQuantity,
       })
     }
 
@@ -481,6 +1101,8 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
       statusHistory: [
         { status: 'REQUESTED', at: requestedAt, byName: requestedBy, note: '매장 발주 요청 등록' },
       ],
+      inboundStatus: null,
+      inboundStatusHistory: [],
       items: normalizedItems,
     })
 
@@ -527,6 +1149,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         safetyStock: sku.safetyStock,
         recommendedQuantity: Math.max(0, sku.safetyStock - sku.stock),
         requestedQuantity,
+        expectedInboundQuantity: requestedQuantity,
       })
     }
 
@@ -534,10 +1157,12 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     order.memo = memo.trim()
     order.totalSkuCount = normalizedItems.length
     order.totalRequestedQuantity = normalizedItems.reduce((sum, item) => sum + item.requestedQuantity, 0)
-    order.statusHistory = [
-      ...order.statusHistory,
-      { status: 'REQUESTED', at: new Date().toISOString(), byName: order.requestedBy, note: '매장 발주 요청 수정' },
-    ]
+    order.statusHistory = appendHistory(order.statusHistory, {
+      status: 'REQUESTED',
+      at: new Date().toISOString(),
+      byName: order.requestedBy,
+      note: '매장 발주 요청 수정',
+    })
     persist()
     return { success: true, order }
   }
@@ -551,10 +1176,14 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
 
     order.status = 'CANCELLED'
     order.cancelReason = reason.trim()
-    order.statusHistory = [
-      ...order.statusHistory,
-      { status: 'CANCELLED', at: new Date().toISOString(), byName: cancelledBy, note: '매장 요청 취소' },
-    ]
+    order.statusHistory = appendHistory(order.statusHistory, {
+      status: 'CANCELLED',
+      at: new Date().toISOString(),
+      byName: cancelledBy,
+      note: '매장 요청 취소',
+    })
+    order.inboundStatus = null
+    order.inboundStatusHistory = []
     persist()
     return { success: true, order }
   }
@@ -565,11 +1194,98 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
       return { success: false, message: '승인 가능한 요청 상태가 아닙니다.' }
     }
 
+    const now = new Date().toISOString()
     order.status = 'APPROVED'
-    order.statusHistory = [
-      ...order.statusHistory,
-      { status: 'APPROVED', at: new Date().toISOString(), byName: approver, note: '배치 승인 완료' },
+    order.statusHistory = appendHistory(order.statusHistory, {
+      status: 'APPROVED',
+      at: now,
+      byName: approver,
+      note: '배치 승인 완료',
+    })
+    order.inboundStatus = 'READY_TO_SHIP'
+    order.inboundStatusHistory = [
+      { status: 'READY_TO_SHIP', at: now, byName: approver, note: '창고 출고 준비 대기' },
     ]
+    persist()
+    return { success: true, order }
+  }
+
+  function updateInboundStatus(orderId, nextStatus, byName, note) {
+    const order = orders.value.find((entry) => entry.orderId === orderId)
+    if (!order) return { success: false, message: '발주건을 찾을 수 없습니다.' }
+    if (order.status !== 'APPROVED') {
+      return { success: false, message: '승인 완료된 발주만 입고 흐름을 가집니다.' }
+    }
+
+    order.inboundStatus = nextStatus
+    order.inboundStatusHistory = appendHistory(order.inboundStatusHistory, {
+      status: nextStatus,
+      at: new Date().toISOString(),
+      byName,
+      note,
+    })
+    persist()
+    return { success: true, order }
+  }
+
+  function markReadyToShip(orderId, byName = '시스템') {
+    return updateInboundStatus(orderId, 'READY_TO_SHIP', byName, '창고 출고 준비 완료')
+  }
+
+  function markInTransit(orderId, byName = '서울 1센터') {
+    const order = getOrderById(orderId)
+    if (!order || order.inboundStatus !== 'READY_TO_SHIP') {
+      return { success: false, message: '배송 준비중 상태에서만 배송 중으로 변경할 수 있습니다.' }
+    }
+    return updateInboundStatus(orderId, 'IN_TRANSIT', byName, '배송 출발 처리')
+  }
+
+  function markArrived(orderId, byName = DEFAULT_STORE_NAME) {
+    const order = getOrderById(orderId)
+    if (!order || order.inboundStatus !== 'IN_TRANSIT') {
+      return { success: false, message: '배송 중 상태에서만 배송 완료로 변경할 수 있습니다.' }
+    }
+    return updateInboundStatus(orderId, 'ARRIVED', byName, '매장 도착 확인')
+  }
+
+  function confirmInbound(orderId, confirmedBy = DEFAULT_REQUESTED_BY) {
+    const order = orders.value.find((entry) => entry.orderId === orderId)
+    if (!order) return { success: false, message: '입고 대상을 찾을 수 없습니다.' }
+    if (order.status !== 'APPROVED') {
+      return { success: false, message: '승인 완료된 발주만 입고 처리할 수 있습니다.' }
+    }
+    if (order.inboundStatus === 'RECEIVED' || order.status === 'COMPLETED') {
+      return { success: false, message: '이미 입고 완료된 발주입니다.' }
+    }
+    if (order.inboundStatus !== 'ARRIVED') {
+      return { success: false, message: '배송 완료 상태에서만 입고 확정할 수 있습니다.' }
+    }
+
+    const result = inventory.receiveItems(
+      order.items.map((item) => ({
+        skuId: item.skuId,
+        quantity: item.expectedInboundQuantity,
+      })),
+    )
+    if (!result.success) return result
+
+    const now = new Date().toISOString()
+    order.status = 'COMPLETED'
+    order.inboundStatus = 'RECEIVED'
+    order.inboundCompletedAt = now
+    order.inboundConfirmedBy = confirmedBy
+    order.statusHistory = appendHistory(order.statusHistory, {
+      status: 'COMPLETED',
+      at: now,
+      byName: confirmedBy,
+      note: '매장 입고까지 최종 완료',
+    })
+    order.inboundStatusHistory = appendHistory(order.inboundStatusHistory, {
+      status: 'RECEIVED',
+      at: now,
+      byName: confirmedBy,
+      note: '매장 입고 확정 완료',
+    })
     persist()
     return { success: true, order }
   }
@@ -587,6 +1303,11 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     sortBy,
     requestSortBy,
     selectedOrderId,
+    inboundActiveStatusTab,
+    inboundSearchKeyword,
+    inboundDateFrom,
+    inboundDateTo,
+    inboundSortBy,
     sortedOrders,
     filteredOrders,
     selectedOrder,
@@ -594,12 +1315,25 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
     summary,
     analytics,
     requestableSkus,
+    inboundTargetOrders,
+    inboundListOrders,
+    inboundHistoryOrders,
+    filteredInboundList,
+    filteredInboundHistory,
+    inboundStatusCounts,
+    inboundSummary,
+    inboundAnalytics,
     statusLabelMap: STATUS_LABEL,
+    inboundStatusLabelMap: INBOUND_STATUS_LABEL,
     selectOrder,
     createOrder,
     updateOrder,
     cancelOrder,
     markApproved,
+    markReadyToShip,
+    markInTransit,
+    markArrived,
+    confirmInbound,
     getOrderById,
   }
 })

@@ -110,6 +110,28 @@ export const useInventoryStore = defineStore('inventory', () => {
     return { success: true, message: '판매 완료' }
   }
 
+  function receiveItems(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return { success: false, message: '입고할 상품이 없습니다.' }
+    }
+
+    for (const item of items) {
+      if (!item.quantity || item.quantity <= 0) {
+        return { success: false, message: '입고 수량을 확인해주세요.' }
+      }
+      const sku = getSkuById(item.skuId)
+      if (!sku) return { success: false, message: '상품 정보를 찾을 수 없습니다.' }
+    }
+
+    items.forEach((item) => {
+      const sku = getSkuById(item.skuId)
+      sku.stock += item.quantity
+    })
+
+    saveStockMap(skus.value)
+    return { success: true, message: '입고 완료' }
+  }
+
   return {
     skus,
     mainCategories,
@@ -118,5 +140,6 @@ export const useInventoryStore = defineStore('inventory', () => {
     stockStatus,
     getSkuById,
     sellItems,
+    receiveItems,
   }
 })
