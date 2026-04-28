@@ -117,10 +117,12 @@ export const roleMenus = {
     },
     {
       label: '발주 관리',
-      path: '/store/orders',
+      path: '/store/orders/request',
       icon: 'file',
       children: [
-        { label: '발주 관리', path: '/store/orders' },
+        { label: '발주 요청', path: '/store/orders/request' },
+        { label: '발주 내역', path: '/store/orders/history' },
+        { label: '발주 분석', path: '/store/orders/analysis' },
       ],
     },
     {
