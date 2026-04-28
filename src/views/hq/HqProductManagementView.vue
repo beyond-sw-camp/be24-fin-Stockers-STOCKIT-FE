@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
-import { getCategories, getCategory } from '@/api/category.js'
+import { deleteCategory, getCategories, getCategory, updateCategory } from '@/api/category.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -25,6 +25,8 @@ watch(() => route.query.tab, (tab) => {
 })
 const selectedProduct = ref(null)
 const selectedCategory = ref(null)
+const categoryEditForm = ref(null)
+const categorySubmitting = ref(false)
 
 const productSideMenus = [
   { label: '카테고리 관리', icon: 'tags', id: 'SO-006' },
@@ -97,7 +99,10 @@ const toggleExpand = (id, event) => {
 }
 
 const closeDetail = () => { selectedProduct.value = null }
-const closeCategoryDetail = () => { selectedCategory.value = null }
+const closeCategoryDetail = () => {
+  selectedCategory.value = null
+  categoryEditForm.value = null
+}
 const productEditForm = ref(null)
 
 const statusLabelMap = {
@@ -146,6 +151,7 @@ async function loadCategories() {
 
 async function selectCategory(code) {
   try {
+    categoryError.value = ''
     const detail = await getCategory(code)
     const parent = categories.value.find((cat) => cat.id === detail.parentCode) ?? null
     selectedCategory.value = {
@@ -158,8 +164,59 @@ async function selectCategory(code) {
       lastUpdated: formatDate(detail.updatedAt),
       children: [],
     }
+    categoryEditForm.value = {
+      name: selectedCategory.value.name,
+      status: selectedCategory.value.status,
+    }
   } catch (error) {
     categoryError.value = error.message
+  }
+}
+
+const statusCodeMap = {
+  사용중: 'ACTIVE',
+  점검중: 'SUSPENDED',
+  미사용: 'INACTIVE',
+}
+
+async function handleSaveCategory() {
+  if (!selectedCategory.value || !categoryEditForm.value) return
+  if (!categoryEditForm.value.name?.trim()) {
+    categoryError.value = '카테고리명을 입력해주세요.'
+    return
+  }
+
+  try {
+    categorySubmitting.value = true
+    categoryError.value = ''
+    await updateCategory(selectedCategory.value.id, {
+      name: categoryEditForm.value.name.trim(),
+      status: statusCodeMap[categoryEditForm.value.status] ?? 'ACTIVE',
+    })
+    await loadCategories()
+    await selectCategory(selectedCategory.value.id)
+  } catch (error) {
+    categoryError.value = error.message
+  } finally {
+    categorySubmitting.value = false
+  }
+}
+
+async function handleDeleteCategory() {
+  if (!selectedCategory.value) return
+  const ok = confirm(`[${selectedCategory.value.name}] 카테고리를 삭제하시겠습니까?`)
+  if (!ok) return
+
+  try {
+    categorySubmitting.value = true
+    categoryError.value = ''
+    await deleteCategory(selectedCategory.value.id)
+    closeCategoryDetail()
+    await loadCategories()
+  } catch (error) {
+    categoryError.value = error.message
+  } finally {
+    categorySubmitting.value = false
   }
 }
 
@@ -418,7 +475,7 @@ onMounted(() => {
         </div>
 
         <!-- 카테고리 상세 패널 -->
-        <aside v-if="selectedCategory" class="w-full shrink-0 border border-gray-300 bg-white shadow-sm xl:w-80">
+        <aside v-if="selectedCategory && categoryEditForm" class="w-full shrink-0 border border-gray-300 bg-white shadow-sm xl:w-80">
           <div class="flex items-center justify-between bg-[#004D3C] px-4 py-3 text-white">
             <h3 class="inline-flex items-center gap-2 text-[11px] font-bold">
               <InfoIcon :size="14" /> 카테고리 상세
@@ -441,7 +498,7 @@ onMounted(() => {
                 카테고리명
                 <input
                   type="text"
-                  :value="selectedCategory.name"
+                  v-model="categoryEditForm.name"
                   class="mt-1 w-full border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-800 outline-none focus:border-[#004D3C]"
                 />
               </label>
@@ -455,10 +512,10 @@ onMounted(() => {
 
               <label class="block text-[10px] font-bold text-gray-400">
                 상태
-                <select class="mt-1 w-full border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-800 outline-none focus:border-[#004D3C]">
-                  <option :selected="selectedCategory.status === '사용중'">사용중</option>
-                  <option :selected="selectedCategory.status === '점검중'">점검중</option>
-                  <option :selected="selectedCategory.status === '미사용'">미사용</option>
+                <select v-model="categoryEditForm.status" class="mt-1 w-full border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-800 outline-none focus:border-[#004D3C]">
+                  <option>사용중</option>
+                  <option>점검중</option>
+                  <option>미사용</option>
                 </select>
               </label>
             </div>
@@ -477,8 +534,22 @@ onMounted(() => {
             </div>
 
             <div class="flex gap-2 pt-1">
-              <button type="button" class="flex-1 border border-[#004D3C] bg-[#004D3C] py-2 text-xs font-bold text-white hover:bg-[#003d30]">저장</button>
-              <button type="button" class="flex-1 border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600 hover:bg-red-100">삭제</button>
+              <button
+                type="button"
+                class="flex-1 border border-[#004D3C] bg-[#004D3C] py-2 text-xs font-bold text-white hover:bg-[#003d30] disabled:opacity-50"
+                :disabled="categorySubmitting"
+                @click="handleSaveCategory"
+              >
+                저장
+              </button>
+              <button
+                type="button"
+                class="flex-1 border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50"
+                :disabled="categorySubmitting"
+                @click="handleDeleteCategory"
+              >
+                삭제
+              </button>
             </div>
           </div>
         </aside>
