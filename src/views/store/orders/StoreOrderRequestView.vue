@@ -449,7 +449,7 @@ function handleLogout() {
                       class="inline-flex min-w-[48px] items-center justify-center border border-[#004D3C] bg-[#004D3C] px-1 py-1.5 text-[10px] font-black !text-white shadow-sm transition-all hover:-translate-y-px hover:bg-[#003d30]"
                       @click="addToRequest(sku)"
                     >
-                      담기
+                      + 담기
                     </button>
                   </td>
                 </tr>

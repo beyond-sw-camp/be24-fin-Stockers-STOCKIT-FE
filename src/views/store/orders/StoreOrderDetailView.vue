@@ -147,18 +147,19 @@ function handleLogout() {
               <table class="w-full table-fixed border-collapse text-xs">
                 <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                   <tr>
-                    <th class="w-[14%] px-2 py-2.5 text-left font-black">품목코드</th>
-                    <th class="w-[26%] px-2 py-2.5 text-left font-black">상품명</th>
-                    <th class="w-[16%] px-2 py-2.5 text-left font-black">옵션</th>
-                    <th class="w-[20%] px-2 py-2.5 text-left font-black">카테고리</th>
-                    <th class="w-[12%] px-2 py-2.5 text-right font-black">실재고</th>
-                    <th class="w-[12%] px-2 py-2.5 text-right font-black">가용재고</th>
-                    <th class="w-[10%] px-2 py-2.5 text-right font-black">요청</th>
+                    <th class="w-[18%] px-3 py-2.5 text-left font-black">품목코드</th>
+                    <th class="w-[20%] px-2 py-2.5 text-left font-black">상품명</th>
+                    <th class="w-[17%] px-2 py-2.5 text-left font-black">옵션</th>
+                    <th class="w-[18%] px-2 py-2.5 text-left font-black">카테고리</th>
+                    <th class="w-[10%] px-2 py-2.5 text-center font-black">실재고</th>
+                    <th class="w-[10%] px-2 py-2.5 text-center font-black">가용재고</th>
+                    <th class="w-[10%] px-2 py-2.5 text-center font-black">안전재고</th>
+                    <th class="w-[10%] px-2 py-2.5 text-center font-black">요청</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="item in selectedOrder.items" :key="`${selectedOrder.orderId}-${item.skuId}`">
-                    <td class="px-2 py-2.5 font-mono font-bold text-gray-500">{{ item.itemCode }}</td>
+                    <td class="px-3 py-2.5 font-mono font-bold text-gray-500">{{ item.itemCode }}</td>
                     <td class="px-2 py-2.5">
                       <p class="truncate font-black text-gray-900">{{ item.productName }}</p>
                     </td>
@@ -166,9 +167,10 @@ function handleLogout() {
                     <td class="px-2 py-2.5 font-bold text-gray-500">
                       {{ item.mainCategory }} &gt; {{ item.subCategory }}
                     </td>
-                    <td class="px-2 py-2.5 text-right font-black text-gray-800">{{ item.currentStoreStock }}</td>
-                    <td class="px-2 py-2.5 text-right font-black text-gray-900">{{ item.availableStoreStock }}</td>
-                    <td class="px-2 py-2.5 text-right font-black text-gray-900">{{ item.requestedQuantity }}</td>
+                    <td class="px-2 py-2.5 text-center font-black text-gray-800">{{ item.currentStoreStock }}</td>
+                    <td class="px-2 py-2.5 text-center font-black text-gray-900">{{ item.availableStoreStock }}</td>
+                    <td class="px-2 py-2.5 text-center font-black text-gray-700">{{ item.safetyStock }}</td>
+                    <td class="px-3 py-2.5 text-center font-black text-gray-900">{{ item.requestedQuantity }}</td>
                   </tr>
                 </tbody>
               </table>
