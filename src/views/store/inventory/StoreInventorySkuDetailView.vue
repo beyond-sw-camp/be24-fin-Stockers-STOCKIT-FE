@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { useInventoryStore } from '@/stores/inventory.js'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const inventory = useInventoryStore()
 
 const storeTopMenus = roleMenus.store
 const storeSideMenus = roleMenus.store.find((menu) => menu.label === '재고 관리')?.children ?? []
@@ -15,41 +17,40 @@ const storeSideMenus = roleMenus.store.find((menu) => menu.label === '재고 관
 const activeSideMenu = ref('매장 재고 조회')
 const activeTopMenu = computed(() => '재고 관리')
 
-const colorOptions = ['검정', '흰색', '그레이', '아이보리']
-const colorCodeMap = { 검정: 'BLK', 흰색: 'WHT', 그레이: 'GRY', 아이보리: 'IVR' }
-const sizeOptions = ['XS', 'S', 'M', 'L', 'XL']
+function toItemCode(productId, mainCategory) {
+  if (productId) {
+    const match = productId.match(/^PRD-([A-Z]+)-[A-Z]+-(\d+)$/)
+    if (match) return `SPA-${match[1]}-${match[2]}`
+  }
+
+  const fallbackMap = {
+    상의: 'TOP',
+    바지: 'PNT',
+    치마: 'SKT',
+    아우터: 'OUT',
+  }
+  return `SPA-${fallbackMap[mainCategory] ?? 'SKU'}-000`
+}
 
 const itemCode = computed(() => String(route.params.itemCode ?? route.query.itemCode ?? ''))
 const itemName = computed(() => String(route.query.itemName ?? '선택 품목'))
 const parentCategory = computed(() => String(route.query.parentCategory ?? '-'))
 const childCategory = computed(() => String(route.query.childCategory ?? '-'))
 
-const seed = computed(() =>
-  itemCode.value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0),
-)
-
 const skuRows = computed(() =>
-  colorOptions.flatMap((color, colorIndex) =>
-    sizeOptions.map((size, sizeIndex) => {
-      const actualStock = 4 + ((seed.value + colorIndex * 9 + sizeIndex * 5) % 26)
-      const reservedStock = (seed.value + colorIndex * 3 + sizeIndex * 7) % 5
-      const availableStock = Math.max(actualStock - reservedStock, 0)
-      const safetyStock = 6 + (sizeIndex % 3) * 2
-      const status = availableStock === 0 ? '품절' : availableStock < safetyStock ? '부족' : '정상'
-      const updatedAt = `2026.04.${String(28 - (colorIndex % 2)).padStart(2, '0')} ${String(10 + sizeIndex).padStart(2, '0')}:20`
-
-      return {
-        skuCode: `${itemCode.value}-${colorCodeMap[color]}-${size}`,
-        color,
-        size,
-        actualStock,
-        availableStock,
-        safetyStock,
-        status,
-        updatedAt,
-      }
-    }),
-  ),
+  inventory.skus
+    .filter((sku) => toItemCode(sku.productId, sku.mainCategory) === itemCode.value)
+    .map((sku) => ({
+      skuCode: sku.skuId,
+      color: sku.color,
+      size: sku.size,
+      actualStock: sku.stock,
+      availableStock: sku.stock,
+      safetyStock: sku.safetyStock,
+      status: sku.stock === 0 ? '품절' : sku.stock <= sku.safetyStock ? '부족' : '정상',
+      updatedAt: new Date().toISOString(),
+    }))
+    .sort((a, b) => a.color.localeCompare(b.color, 'ko') || a.size.localeCompare(b.size, 'ko')),
 )
 
 const statusClass = (status) => ({
@@ -64,6 +65,13 @@ const backQuery = computed(() => ({
   child: typeof route.query.child === 'string' ? route.query.child : undefined,
   status: typeof route.query.status === 'string' ? route.query.status : undefined,
 }))
+
+function formatDateTime(iso) {
+  if (!iso) return '-'
+  const date = new Date(iso)
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 function goBackToInventory() {
   router.push({
@@ -135,7 +143,12 @@ function handleLogout() {
                     {{ sku.status }}
                   </span>
                 </td>
-                <td class="px-3 py-3 font-bold text-gray-500">{{ sku.updatedAt }}</td>
+                <td class="px-3 py-3 font-bold text-gray-500">{{ formatDateTime(sku.updatedAt) }}</td>
+              </tr>
+              <tr v-if="skuRows.length === 0">
+                <td colspan="8" class="px-3 py-14 text-center text-sm font-bold text-gray-400">
+                  조회 가능한 SKU 재고가 없습니다.
+                </td>
               </tr>
             </tbody>
           </table>
