@@ -28,15 +28,25 @@ const feedbackType = ref('info')
 
 const isEditMode = computed(() => route.name === 'store-order-edit')
 const editingOrderId = computed(() => String(route.params.id ?? ''))
-const editingOrder = computed(() => (
-  isEditMode.value && editingOrderId.value
-    ? storeOrders.getOrderById(editingOrderId.value)
-    : null
-))
+const editingOrder = computed(() =>
+  isEditMode.value && editingOrderId.value ? storeOrders.getOrderById(editingOrderId.value) : null,
+)
+
+const MAIN_CATEGORY_ORDER = ['상의', '바지', '치마', '아우터']
+
+function compareMainCategory(aCategory, bCategory) {
+  const rankA = MAIN_CATEGORY_ORDER.indexOf(aCategory)
+  const rankB = MAIN_CATEGORY_ORDER.indexOf(bCategory)
+  const normalizedRankA = rankA === -1 ? MAIN_CATEGORY_ORDER.length : rankA
+  const normalizedRankB = rankB === -1 ? MAIN_CATEGORY_ORDER.length : rankB
+
+  if (normalizedRankA !== normalizedRankB) return normalizedRankA - normalizedRankB
+  return String(aCategory ?? '').localeCompare(String(bCategory ?? ''), 'ko')
+}
 
 const availableMainCategories = computed(() => [
   '전체',
-  ...new Set(storeOrders.requestableSkus.map((sku) => sku.mainCategory)),
+  ...[...new Set(storeOrders.requestableSkus.map((sku) => sku.mainCategory))].sort(compareMainCategory),
 ])
 
 const availableSubCategories = computed(() => {
@@ -64,8 +74,10 @@ const availableSizes = computed(() => [
 const filteredSkus = computed(() => {
   const keyword = searchTerm.value.trim().toLowerCase()
   return storeOrders.requestableSkus.filter((sku) => {
-    const matchMain = selectedMainCategory.value === '전체' || sku.mainCategory === selectedMainCategory.value
-    const matchSub = selectedSubCategory.value === '전체' || sku.subCategory === selectedSubCategory.value
+    const matchMain =
+      selectedMainCategory.value === '전체' || sku.mainCategory === selectedMainCategory.value
+    const matchSub =
+      selectedSubCategory.value === '전체' || sku.subCategory === selectedSubCategory.value
     const matchColor = selectedColor.value === '전체' || sku.color === selectedColor.value
     const matchSize = selectedSize.value === '전체' || sku.size === selectedSize.value
     const matchKeyword =
@@ -110,6 +122,7 @@ function addToRequest(sku) {
     {
       skuId: sku.skuId,
       productId: sku.productId,
+      itemCode: sku.itemCode,
       productName: sku.productName,
       mainCategory: sku.mainCategory,
       subCategory: sku.subCategory,
@@ -219,6 +232,7 @@ function loadEditingOrder() {
   requestLines.value = order.items.map((item) => ({
     skuId: item.skuId,
     productId: item.productId,
+    itemCode: item.itemCode,
     productName: item.productName,
     mainCategory: item.mainCategory,
     subCategory: item.subCategory,
@@ -243,8 +257,8 @@ const statusClass = {
 }
 
 const statusLabel = {
-  out: '부족',
-  low: '주의',
+  out: '품절',
+  low: '부족',
   normal: '정상',
 }
 
@@ -266,30 +280,34 @@ function handleLogout() {
       <section class="border border-gray-300 bg-white p-4 shadow-sm">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Store Orders</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+              Store Orders
+            </p>
             <h1 class="mt-1 text-lg font-black text-gray-900">
               {{ isEditMode ? '발주 요청 수정' : '발주 요청' }}
             </h1>
             <p class="mt-1 text-xs font-bold text-gray-500">
-              기본은 부족 SKU 우선 정렬입니다. 가용재고는 실재고 + 입고예정 수량 기준이며 일반 정렬로도 전환할 수 있습니다.
+              기본은 부족 SKU 우선 정렬입니다. 가용재고는 실재고 + 입고예정 수량 기준이며 일반
+              정렬로도 전환할 수 있습니다.
             </p>
           </div>
           <div class="text-right text-[11px] font-bold text-gray-500">
             <p>{{ auth.user?.storeName ?? '매장' }} · 요청서 {{ requestLines.length }}건</p>
             <p class="mt-1 text-gray-400">
-              총 요청 수량 {{ totalRequestedQuantity }}개 · 권장 수량 {{ totalRecommendedQuantity }}개
+              총 요청 수량 {{ totalRequestedQuantity }}개 · 권장 수량
+              {{ totalRecommendedQuantity }}개
             </p>
           </div>
         </div>
       </section>
 
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.82fr)_minmax(320px,0.92fr)]">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.86fr)_minmax(280px,0.78fr)]">
         <section class="border border-gray-300 bg-white shadow-sm">
           <div class="border-b border-gray-200 px-4 py-3">
             <h2 class="text-sm font-black text-gray-900">매장 발주 검색</h2>
           </div>
 
-          <div class="grid gap-3 border-b border-gray-200 bg-gray-50/80 px-4 py-4 md:grid-cols-6">
+          <div class="grid gap-2.5 border-b border-gray-200 bg-gray-50/80 px-3 py-3 md:grid-cols-6">
             <label class="flex flex-col gap-1.5">
               <span class="text-[11px] font-bold text-gray-500">대분류</span>
               <select
@@ -297,7 +315,11 @@ function handleLogout() {
                 class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
                 @change="syncSubCategory"
               >
-                <option v-for="category in availableMainCategories" :key="category" :value="category">
+                <option
+                  v-for="category in availableMainCategories"
+                  :key="category"
+                  :value="category"
+                >
                   {{ category }}
                 </option>
               </select>
@@ -309,7 +331,11 @@ function handleLogout() {
                 v-model="selectedSubCategory"
                 class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
               >
-                <option v-for="category in availableSubCategories" :key="category" :value="category">
+                <option
+                  v-for="category in availableSubCategories"
+                  :key="category"
+                  :value="category"
+                >
                   {{ category }}
                 </option>
               </select>
@@ -358,24 +384,26 @@ function handleLogout() {
                 <option value="priority">부족 SKU 우선</option>
                 <option value="category">카테고리순</option>
                 <option value="name">상품명순</option>
+                <option value="stockAsc">재고 부족한순</option>
                 <option value="stockDesc">재고 많은순</option>
               </select>
             </label>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="min-w-[1120px] w-full border-collapse text-xs">
+          <div class="min-w-0">
+            <table class="w-full table-fixed border-collapse text-xs">
               <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                 <tr>
-                  <th class="px-4 py-3 text-left font-black">상품명</th>
-                  <th class="px-4 py-3 text-left font-black">카테고리</th>
-                  <th class="px-4 py-3 text-left font-black">옵션</th>
-                  <th class="px-4 py-3 text-center font-black">실재고</th>
-                  <th class="px-4 py-3 text-center font-black">가용재고</th>
-                  <th class="px-4 py-3 text-center font-black">안전재고</th>
-                  <th class="px-4 py-3 text-center font-black">권장 수량</th>
-                  <th class="px-4 py-3 text-center font-black">상태</th>
-                  <th class="px-4 py-3 text-center font-black">추가</th>
+                  <th class="w-[12%] px-3 py-2.5 text-left font-black">품목코드</th>
+                  <th class="w-[20%] px-1.5 py-2.5 text-left font-black">상품명</th>
+                  <th class="w-[12%] px-1 py-2.5 text-left font-black">옵션</th>
+                  <th class="w-[12%] px-1 py-2.5 text-left font-black">카테고리</th>
+                  <th class="w-[6.5%] px-1 py-2.5 text-center font-black">실재고</th>
+                  <th class="w-[6.5%] px-1 py-2.5 text-center font-black">가용재고</th>
+                  <th class="w-[6.5%] px-1 py-2.5 text-center font-black">안전재고</th>
+                  <th class="w-[8%] px-1 py-2.5 text-center font-black">권장 발주량</th>
+                  <th class="w-[8%] px-1 py-2.5 text-center font-black">상태</th>
+                  <th class="w-[8%] px-1 py-2.5 text-center font-black">추가</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -384,33 +412,41 @@ function handleLogout() {
                   :key="sku.skuId"
                   class="transition-colors hover:bg-gray-50"
                 >
-                  <td class="px-4 py-3">
-                    <p class="font-black text-gray-900">{{ sku.productName }}</p>
+                  <td class="px-3 py-2.5 font-mono font-bold text-gray-500">{{ sku.itemCode }}</td>
+                  <td class="px-2 py-2.5">
+                    <p class="truncate font-black text-gray-900">{{ sku.productName }}</p>
                   </td>
-                  <td class="px-4 py-3 font-bold text-gray-600">
-                    {{ sku.mainCategory }} &gt; {{ sku.subCategory }}
-                  </td>
-                  <td class="px-4 py-3 font-bold text-gray-700">
+                  <td class="px-1 py-2.5 font-bold text-gray-700">
                     {{ sku.color }} / {{ sku.size }}
                   </td>
-                  <td class="px-4 py-3 text-center font-black text-gray-700">{{ sku.stock }}</td>
-                  <td class="px-4 py-3 text-center font-black text-gray-900">{{ sku.availableStoreStock }}</td>
-                  <td class="px-4 py-3 text-center font-black text-gray-700">{{ sku.safetyStock }}</td>
-                  <td class="px-4 py-3 text-center font-black" :class="sku.recommendedQuantity > 0 ? 'text-orange-600' : 'text-gray-500'">
+                  <td class="px-1 py-2.5 font-bold text-gray-600">
+                    <p class="truncate">{{ sku.mainCategory }} &gt; {{ sku.subCategory }}</p>
+                  </td>
+                  <td class="px-1 py-2.5 text-center font-black text-gray-700">{{ sku.stock }}</td>
+                  <td class="px-1 py-2.5 text-center font-black text-gray-900">
+                    {{ sku.availableStoreStock }}
+                  </td>
+                  <td class="px-1 py-2.5 text-center font-black text-gray-700">
+                    {{ sku.safetyStock }}
+                  </td>
+                  <td
+                    class="px-1 py-2.5 text-center font-black"
+                    :class="sku.recommendedQuantity > 0 ? 'text-orange-600' : 'text-gray-500'"
+                  >
                     {{ sku.recommendedQuantity }}
                   </td>
-                  <td class="px-4 py-3 text-center">
+                  <td class="px-1 py-2.5 text-center">
                     <span
-                      class="inline-flex min-w-12 justify-center px-2 py-1 text-[11px] font-black"
+                      class="inline-flex min-w-9 justify-center px-1 py-1 text-[10px] font-black"
                       :class="statusClass[sku.stockStatus]"
                     >
                       {{ statusLabel[sku.stockStatus] }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-center">
+                  <td class="px-1 py-2.5 text-center">
                     <button
                       type="button"
-                      class="inline-flex min-w-[72px] items-center justify-center border border-[#004D3C] bg-[#004D3C] px-3 py-2 text-[11px] font-black text-white shadow-sm transition-all hover:-translate-y-px hover:bg-[#003d30]"
+                      class="inline-flex min-w-[48px] items-center justify-center border border-[#004D3C] bg-[#004D3C] px-1 py-1.5 text-[10px] font-black !text-white shadow-sm transition-all hover:-translate-y-px hover:bg-[#003d30]"
                       @click="addToRequest(sku)"
                     >
                       담기
@@ -418,7 +454,7 @@ function handleLogout() {
                   </td>
                 </tr>
                 <tr v-if="filteredSkus.length === 0">
-                  <td colspan="9" class="px-4 py-12 text-center text-gray-400">
+                  <td colspan="10" class="px-4 py-12 text-center text-gray-400">
                     조건에 맞는 SKU가 없습니다.
                   </td>
                 </tr>
@@ -460,12 +496,17 @@ function handleLogout() {
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="truncate text-sm font-black text-gray-900">{{ line.productName }}</p>
+                  <p class="font-mono text-[10px] font-bold text-gray-400">
+                    {{ line.itemCode }}
+                  </p>
+                  <p class="mt-1 truncate text-sm font-black text-gray-900">{{ line.productName }}</p>
                   <p class="mt-1 text-[11px] font-bold text-gray-500">
-                    {{ line.mainCategory }} &gt; {{ line.subCategory }} · {{ line.color }} / {{ line.size }}
+                    {{ line.mainCategory }} &gt; {{ line.subCategory }} · {{ line.color }} /
+                    {{ line.size }}
                   </p>
                   <p class="mt-1 text-[11px] font-bold text-gray-400">
-                    실재고 {{ line.currentStoreStock }} · 가용재고 {{ line.availableStoreStock }} · 안전재고 {{ line.safetyStock }} · 권장 {{ line.recommendedQuantity }}
+                    실재고 {{ line.currentStoreStock }} · 가용재고 {{ line.availableStoreStock }} ·
+                    안전재고 {{ line.safetyStock }} · 권장 {{ line.recommendedQuantity }}
                   </p>
                 </div>
                 <button
@@ -520,18 +561,18 @@ function handleLogout() {
               />
             </label>
 
-            <div class="mt-4 flex items-center justify-between text-xs font-bold text-gray-500">
+            <div
+              class="mt-6 flex items-center justify-between gap-6 pt-2 text-xs font-bold text-gray-500"
+            >
               <span>총 SKU</span>
               <span>{{ requestLines.length }}건</span>
             </div>
-            <div class="mt-2 flex items-center justify-between text-sm font-black text-gray-900">
+            <div
+              class="mt-6 flex items-center justify-between gap-6 pt-4 pb-2 text-sm font-black text-gray-900"
+            >
               <span>총 요청 수량</span>
               <span>{{ totalRequestedQuantity }}개</span>
             </div>
-
-            <p class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700">
-              운영 정책: 요청된 발주는 익일 12시 배치 승인 대상으로 안내합니다. 가용재고는 실재고 + 입고예정 수량 기준입니다.
-            </p>
 
             <p
               v-if="feedbackMessage"
@@ -545,7 +586,8 @@ function handleLogout() {
               {{ feedbackMessage }}
             </p>
 
-            <div class="mt-4 grid gap-2" :class="isEditMode ? 'grid-cols-2' : 'grid-cols-1'">
+            <div class="mt-4 border-t border-gray-200 pt-4">
+              <div class="grid gap-2" :class="isEditMode ? 'grid-cols-2' : 'grid-cols-1'">
               <button
                 v-if="isEditMode"
                 type="button"
@@ -567,6 +609,14 @@ function handleLogout() {
               >
                 {{ isEditMode ? '발주 요청 수정 저장' : '발주 요청 등록' }}
               </button>
+              </div>
+
+              <p
+                class="mt-5 border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-black text-blue-700"
+              >
+                운영 정책: 요청된 발주는 익일 12시 배치 승인 대상으로 안내합니다. 가용재고는 실재고
+                + 입고예정 수량 기준입니다.
+              </p>
             </div>
           </div>
         </section>

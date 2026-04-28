@@ -130,7 +130,7 @@ function handleLogout() {
           </span>
         </div>
 
-        <div class="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <div class="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)]">
           <div class="flex flex-col gap-4">
             <section class="grid gap-3 sm:grid-cols-2">
               <div class="border border-gray-200 bg-gray-50 px-3 py-3">
@@ -143,29 +143,32 @@ function handleLogout() {
               </div>
             </section>
 
-            <section class="overflow-x-auto">
-              <table class="min-w-[760px] w-full border-collapse text-xs">
+            <section class="min-w-0">
+              <table class="w-full table-fixed border-collapse text-xs">
                 <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                   <tr>
-                    <th class="px-3 py-3 text-left font-black">상품명</th>
-                    <th class="px-3 py-3 text-left font-black">옵션</th>
-                    <th class="px-3 py-3 text-right font-black">실재고</th>
-                    <th class="px-3 py-3 text-right font-black">가용재고</th>
-                    <th class="px-3 py-3 text-right font-black">요청</th>
+                    <th class="w-[14%] px-2 py-2.5 text-left font-black">품목코드</th>
+                    <th class="w-[26%] px-2 py-2.5 text-left font-black">상품명</th>
+                    <th class="w-[16%] px-2 py-2.5 text-left font-black">옵션</th>
+                    <th class="w-[20%] px-2 py-2.5 text-left font-black">카테고리</th>
+                    <th class="w-[12%] px-2 py-2.5 text-right font-black">실재고</th>
+                    <th class="w-[12%] px-2 py-2.5 text-right font-black">가용재고</th>
+                    <th class="w-[10%] px-2 py-2.5 text-right font-black">요청</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="item in selectedOrder.items" :key="`${selectedOrder.orderId}-${item.skuId}`">
-                    <td class="px-3 py-3">
-                      <p class="font-black text-gray-900">{{ item.productName }}</p>
-                      <p class="mt-1 text-[10px] font-bold text-gray-400">
-                        {{ item.mainCategory }} &gt; {{ item.subCategory }}
-                      </p>
+                    <td class="px-2 py-2.5 font-mono font-bold text-gray-500">{{ item.itemCode }}</td>
+                    <td class="px-2 py-2.5">
+                      <p class="truncate font-black text-gray-900">{{ item.productName }}</p>
                     </td>
-                    <td class="px-3 py-3 font-bold text-gray-700">{{ item.color }} / {{ item.size }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-800">{{ item.currentStoreStock }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-900">{{ item.availableStoreStock }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-900">{{ item.requestedQuantity }}</td>
+                    <td class="px-2 py-2.5 font-bold text-gray-700">{{ item.color }} / {{ item.size }}</td>
+                    <td class="px-2 py-2.5 font-bold text-gray-500">
+                      {{ item.mainCategory }} &gt; {{ item.subCategory }}
+                    </td>
+                    <td class="px-2 py-2.5 text-right font-black text-gray-800">{{ item.currentStoreStock }}</td>
+                    <td class="px-2 py-2.5 text-right font-black text-gray-900">{{ item.availableStoreStock }}</td>
+                    <td class="px-2 py-2.5 text-right font-black text-gray-900">{{ item.requestedQuantity }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -183,14 +186,14 @@ function handleLogout() {
           </div>
 
           <div class="flex flex-col gap-4">
-            <section class="border border-blue-200 bg-blue-50 px-3 py-3">
+            <section class="w-full border border-blue-200 bg-blue-50 px-3 py-3">
               <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-500">정책 안내</p>
               <p class="mt-2 text-xs font-black text-blue-700">
                 가용재고는 실재고 + 입고예정 수량 기준입니다. 요청된 발주는 익일 12시 배치 승인 대상으로 안내합니다.
               </p>
             </section>
 
-            <section>
+            <section class="w-full">
               <p class="mb-2 text-[10px] font-black uppercase text-gray-400">진행 이력</p>
               <ol class="ml-2 border border-gray-200 bg-white px-4 py-4">
                 <li
@@ -214,7 +217,7 @@ function handleLogout() {
               </ol>
             </section>
 
-            <div class="space-y-3">
+            <div class="w-full space-y-3">
               <template v-if="selectedOrder.status === 'REQUESTED'">
                 <div class="grid grid-cols-2 gap-2">
                   <button
@@ -222,14 +225,14 @@ function handleLogout() {
                     class="border border-gray-400 bg-white px-2 py-2.5 text-[11px] font-black text-gray-700 hover:bg-gray-50"
                     @click="goEditPage"
                   >
-                    수정
+                    발주 수정
                   </button>
                   <button
                     type="button"
                     class="border border-red-500 bg-red-50 px-2 py-2.5 text-[11px] font-black text-red-700 hover:bg-red-100"
                     @click="openCancelConfirm"
                   >
-                    취소
+                    발주 취소
                   </button>
                 </div>
               </template>
@@ -274,7 +277,7 @@ function handleLogout() {
               v-model="cancelReason"
               rows="3"
               maxlength="500"
-              placeholder="예: 중복 요청, 행사 계획 변경"
+              placeholder="발주 취소 사유 입력 (예: 중복 요청, 행사 계획 변경)"
               class="w-full resize-none border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-red-500"
             />
           </div>

@@ -13,6 +13,34 @@ const STATUS_LABEL = {
   CANCELLED: '취소',
 }
 
+const CATEGORY_ORDER = ['상의', '바지', '치마', '아우터']
+
+function categoryRank(category) {
+  const index = CATEGORY_ORDER.indexOf(category)
+  return index === -1 ? CATEGORY_ORDER.length : index
+}
+
+function compareMainCategory(aCategory, bCategory) {
+  const rankDiff = categoryRank(aCategory) - categoryRank(bCategory)
+  if (rankDiff !== 0) return rankDiff
+  return String(aCategory ?? '').localeCompare(String(bCategory ?? ''), 'ko')
+}
+
+function toItemCode(productId, mainCategory) {
+  if (productId) {
+    const match = productId.match(/^PRD-([A-Z]+)-[A-Z]+-(\d+)$/)
+    if (match) return `SPA-${match[1]}-${match[2]}`
+  }
+
+  const fallbackMap = {
+    상의: 'TOP',
+    바지: 'PNT',
+    치마: 'SKT',
+    아우터: 'OUT',
+  }
+  return `SPA-${fallbackMap[mainCategory] ?? 'SKU'}-000`
+}
+
 const SEED_ORDERS = [
   {
     orderId: 'SOR-20260426-001',
@@ -34,6 +62,7 @@ const SEED_ORDERS = [
         orderId: 'SOR-20260426-001',
         skuId: 'SKU-TOP-SS-001-WHT-L',
         productId: 'PRD-TOP-SS-001',
+        itemCode: 'SPA-TOP-001',
         productName: '에센셜 코튼 반팔 티셔츠',
         mainCategory: '상의',
         subCategory: '반팔',
@@ -51,6 +80,7 @@ const SEED_ORDERS = [
         orderId: 'SOR-20260426-001',
         skuId: 'SKU-OUT-CD-004-IVR-S',
         productId: 'PRD-OUT-CD-004',
+        itemCode: 'SPA-OUT-004',
         productName: '브이넥 가디건',
         mainCategory: '아우터',
         subCategory: '가디건',
@@ -87,6 +117,7 @@ const SEED_ORDERS = [
         orderId: 'SOR-20260425-001',
         skuId: 'SKU-PNT-DN-001-IND-30',
         productId: 'PRD-PNT-DN-001',
+        itemCode: 'SPA-PNT-001',
         productName: '스트레이트 청바지',
         mainCategory: '바지',
         subCategory: '청바지',
@@ -123,6 +154,7 @@ const SEED_ORDERS = [
         orderId: 'SOR-20260424-001',
         skuId: 'SKU-OUT-JK-003-BLK-M',
         productId: 'PRD-OUT-JK-003',
+        itemCode: 'SPA-OUT-003',
         productName: '싱글 자켓',
         mainCategory: '아우터',
         subCategory: '자켓',
@@ -178,6 +210,7 @@ function normalizeOrder(order) {
     return {
       orderId: order.orderId,
       ...item,
+      itemCode: item.itemCode ?? toItemCode(item.productId, item.mainCategory),
       requestedQuantity: Number(item.requestedQuantity ?? 0),
       currentStoreStock,
       inboundExpectedQuantity,
@@ -303,6 +336,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         const skuKey = item.skuId
         const previousSku = skuMap.get(skuKey) ?? {
           skuId: item.skuId,
+          itemCode: item.itemCode,
           productName: item.productName,
           optionLabel: `${item.color} / ${item.size}`,
           categoryLabel: `${item.mainCategory} > ${item.subCategory}`,
@@ -327,7 +361,11 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
 
     return {
       topSkus: [...skuMap.values()].sort((a, b) => b.requestedQuantity - a.requestedQuantity).slice(0, 5),
-      categoryBreakdown: [...categoryMap.values()].sort((a, b) => b.requestedQuantity - a.requestedQuantity),
+      categoryBreakdown: [...categoryMap.values()].sort((a, b) => (
+        compareMainCategory(a.mainCategory, b.mainCategory)
+        || a.subCategory.localeCompare(b.subCategory, 'ko')
+        || b.requestedQuantity - a.requestedQuantity
+      )),
     }
   })
 
@@ -337,6 +375,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         const inboundExpectedQuantity = inboundExpectedForSku(sku)
         return {
           ...sku,
+          itemCode: toItemCode(sku.productId, sku.mainCategory),
           inboundExpectedQuantity,
           availableStoreStock: sku.stock + inboundExpectedQuantity,
           recommendedQuantity: Math.max(0, sku.safetyStock - sku.stock),
@@ -346,7 +385,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
       .sort((a, b) => {
         if (requestSortBy.value === 'category') {
           return (
-            a.mainCategory.localeCompare(b.mainCategory, 'ko')
+            compareMainCategory(a.mainCategory, b.mainCategory)
             || a.subCategory.localeCompare(b.subCategory, 'ko')
             || a.productName.localeCompare(b.productName, 'ko')
           )
@@ -356,6 +395,16 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         }
         if (requestSortBy.value === 'stockDesc') {
           if (b.stock !== a.stock) return b.stock - a.stock
+          if (b.recommendedQuantity !== a.recommendedQuantity) {
+            return b.recommendedQuantity - a.recommendedQuantity
+          }
+          return a.productName.localeCompare(b.productName, 'ko')
+        }
+        if (requestSortBy.value === 'stockAsc') {
+          if (a.stock !== b.stock) return a.stock - b.stock
+          if (b.recommendedQuantity !== a.recommendedQuantity) {
+            return b.recommendedQuantity - a.recommendedQuantity
+          }
           return a.productName.localeCompare(b.productName, 'ko')
         }
 
@@ -399,6 +448,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
       normalizedItems.push({
         skuId: sku.skuId,
         productId: sku.productId,
+        itemCode: toItemCode(sku.productId, sku.mainCategory),
         productName: sku.productName,
         mainCategory: sku.mainCategory,
         subCategory: sku.subCategory,
@@ -464,6 +514,7 @@ export const useStoreOrdersStore = defineStore('storeOrders', () => {
         orderId,
         skuId: sku.skuId,
         productId: sku.productId,
+        itemCode: toItemCode(sku.productId, sku.mainCategory),
         productName: sku.productName,
         mainCategory: sku.mainCategory,
         subCategory: sku.subCategory,

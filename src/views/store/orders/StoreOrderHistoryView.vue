@@ -144,16 +144,16 @@ function handleLogout() {
           </select>
         </div>
 
-        <div class="overflow-auto">
-          <table class="min-w-[760px] w-full border-collapse text-xs">
+        <div class="min-w-0">
+          <table class="w-full table-fixed border-collapse text-xs">
             <thead class="bg-gray-100 text-[10px] uppercase tracking-wider text-gray-500">
               <tr>
-                <th class="px-3 py-2 text-left font-black">요청일시</th>
-                <th class="px-3 py-2 text-left font-black">발주번호</th>
-                <th class="px-3 py-2 text-left font-black">대표 상품명</th>
-                <th class="px-3 py-2 text-right font-black">총 SKU</th>
-                <th class="px-3 py-2 text-right font-black">총요청수량</th>
-                <th class="px-3 py-2 text-center font-black">상태</th>
+                <th class="w-[20%] px-2 py-2 text-left font-black">요청일시</th>
+                <th class="w-[18%] px-2 py-2 text-left font-black">발주번호</th>
+                <th class="w-[30%] px-2 py-2 text-left font-black">대표 상품명</th>
+                <th class="w-[10%] px-2 py-2 text-right font-black">총 SKU</th>
+                <th class="w-[12%] px-2 py-2 text-right font-black">총요청</th>
+                <th class="w-[10%] px-2 py-2 text-center font-black">상태</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -163,12 +163,14 @@ function handleLogout() {
                 class="cursor-pointer transition-colors hover:bg-gray-50"
                 @click="router.push({ name: 'store-order-detail', params: { id: order.orderId } })"
               >
-                <td class="px-3 py-3 font-bold text-gray-600">{{ formatDateTime(order.requestedAt) }}</td>
-                <td class="px-3 py-3 font-mono font-black text-gray-800">{{ order.orderId }}</td>
-                <td class="px-3 py-3 font-black text-gray-900">{{ headlineLabel(order) }}</td>
-                <td class="px-3 py-3 text-right font-black text-gray-700">{{ order.totalSkuCount }}</td>
-                <td class="px-3 py-3 text-right font-black text-gray-900">{{ order.totalRequestedQuantity }}</td>
-                <td class="px-3 py-3 text-center">
+                <td class="px-2 py-2.5 font-bold text-gray-600">{{ formatDateTime(order.requestedAt) }}</td>
+                <td class="px-2 py-2.5 font-mono font-black text-gray-800">{{ order.orderId }}</td>
+                <td class="px-2 py-2.5 font-black text-gray-900">
+                  <p class="truncate">{{ headlineLabel(order) }}</p>
+                </td>
+                <td class="px-2 py-2.5 text-right font-black text-gray-700">{{ order.totalSkuCount }}</td>
+                <td class="px-2 py-2.5 text-right font-black text-gray-900">{{ order.totalRequestedQuantity }}</td>
+                <td class="px-2 py-2.5 text-center">
                   <span class="inline-flex px-2 py-1 text-[10px] font-black" :class="statusClass(order.status)">
                     {{ storeOrders.statusLabelMap[order.status] }}
                   </span>
