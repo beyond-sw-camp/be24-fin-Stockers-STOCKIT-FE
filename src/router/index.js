@@ -20,6 +20,8 @@ import StoreInboundAnalysisView from '@/views/store/inbound/StoreInboundAnalysis
 import StoreInventoryView from '@/views/store/inventory/StoreInventoryView.vue'
 import StoreInventorySkuDetailView from '@/views/store/inventory/StoreInventorySkuDetailView.vue'
 import StoreAiReportView from '@/views/store/StoreAiReportView.vue'
+import StoreStatsView from '@/views/store/stats/StoreStatsView.vue'
+import StoreSalesStatsView from '@/views/store/stats/StoreSalesStatsView.vue'
 
 import WarehouseDashboardView from '@/views/warehouse/WarehouseDashboardView.vue'
 import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue'
@@ -91,6 +93,18 @@ const router = createRouter({
     {
       path: '/hq/products/new',
       name: 'hq-product-new',
+      component: () => import('@/views/hq/HqProductCreateView.vue'),
+      meta: { requiresAuth: true, role: 'hq' },
+    },
+    {
+      path: '/hq/products/:productCode/skus',
+      name: 'hq-product-sku-detail',
+      component: () => import('@/views/hq/HqProductSkuDetailView.vue'),
+      meta: { requiresAuth: true, role: 'hq' },
+    },
+    {
+      path: '/hq/products/:productCode/edit',
+      name: 'hq-product-edit',
       component: () => import('@/views/hq/HqProductCreateView.vue'),
       meta: { requiresAuth: true, role: 'hq' },
     },

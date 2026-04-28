@@ -24,6 +24,9 @@ const WAREHOUSES = [
 
 function toFeOrder(beOrder) {
   if (!beOrder) return null
+  // BE ListRes 는 itemCount 만, DetailRes 는 items 배열만 보내므로 둘 중 하나로 fallback.
+  const itemCount =
+    beOrder.itemCount ?? (Array.isArray(beOrder.items) ? beOrder.items.length : 0)
   return {
     id: beOrder.code,
     warehouseId: beOrder.warehouseId ?? '',
@@ -37,6 +40,7 @@ function toFeOrder(beOrder) {
     cancelReason: beOrder.cancelReason ?? '',
     createdAt: beOrder.createdAt ?? '',
     updatedAt: beOrder.updatedAt ?? '',
+    itemCount,
     items: Array.isArray(beOrder.items) ? beOrder.items.map(toFeItem) : [],
     statusHistory: Array.isArray(beOrder.statusHistory)
       ? beOrder.statusHistory.map(toFeHistory)
@@ -173,7 +177,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
   })
 
   const summary = computed(() => {
-    let base = purchaseOrders.value
+    // 취소된(REJECTED) 발주는 총 발주 합계에서 제외 — 실제 처리되지 않은 금액.
+    let base = purchaseOrders.value.filter((o) => o.status !== 'REJECTED')
     if (vendorFilter.value) {
       base = base.filter((o) => o.vendorId === vendorFilter.value)
     }

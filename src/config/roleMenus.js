@@ -133,6 +133,15 @@ export const roleMenus = {
         { label: '입고 분석', path: '/store/inbound/analysis' },
       ],
     },
+    {
+      label: '통계',
+      path: '/store/stats',
+      icon: 'chart',
+      children: [
+        { label: '매장 통계', path: '/store/stats' },
+        { label: '매출 조회', path: '/store/stats/sales' },
+      ],
+    },
   ],
   warehouse: [
     {
