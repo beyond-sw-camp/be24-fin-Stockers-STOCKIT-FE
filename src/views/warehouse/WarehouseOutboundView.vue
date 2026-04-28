@@ -9,7 +9,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const activeSideMenu = ref('출고 관리')
 const topMenus = roleMenus.warehouse
-const sideMenus = roleMenus.warehouse.find((menu) => menu.label === '입/출고관리')?.children ?? []
+const sideMenus = roleMenus.warehouse.find((menu) => menu.label === '입/출고 관리')?.children ?? []
 
 function handleLogout() {
   auth.logout()
@@ -19,7 +19,7 @@ function handleLogout() {
 
 <template>
   <AppLayout
-    active-top-menu="입/출고관리"
+    active-top-menu="입/출고 관리"
     :top-menus="topMenus"
     :side-menus="sideMenus"
     v-model:active-side-menu="activeSideMenu"

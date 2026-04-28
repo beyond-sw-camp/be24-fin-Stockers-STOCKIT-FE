@@ -11,11 +11,9 @@ const auth = useAuthStore()
 const inbound = useInboundStore()
 
 // ─── 레이아웃 ────────────────────────────────────────────────────────────────
-const sideMenus = roleMenus.warehouse
-const activeSideMenu = ref('입고 관리')
 const activeSideMenu = ref('입고 관리')
 const topMenus = roleMenus.warehouse
-const sideMenus = roleMenus.warehouse.find((menu) => menu.label === '입/출고관리')?.children ?? []
+const sideMenus = roleMenus.warehouse.find((menu) => menu.label === '입/출고 관리')?.children ?? []
 
 function handleLogout() {
   auth.logout()
@@ -183,7 +181,7 @@ const CheckIcon = IconBase([{ tag: 'polyline', attrs: { points: '20 6 9 17 4 12'
 
 <template>
   <AppLayout
-    active-top-menu="입/출고관리"
+    active-top-menu="입/출고 관리"
     :top-menus="topMenus"
     :side-menus="sideMenus"
     v-model:active-side-menu="activeSideMenu"
