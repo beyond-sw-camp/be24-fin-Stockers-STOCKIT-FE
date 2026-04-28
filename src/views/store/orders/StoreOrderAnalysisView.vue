@@ -38,7 +38,7 @@ function handleLogout() {
         </p>
       </section>
 
-      <section class="grid gap-4 md:grid-cols-4">
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <article class="border border-gray-300 bg-white p-4 shadow-sm">
           <p class="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">발주건 수</p>
           <p class="mt-2 text-2xl font-black text-gray-900">{{ storeOrders.summary.totalOrders }}</p>
@@ -54,6 +54,10 @@ function handleLogout() {
         <article class="border border-gray-300 bg-white p-4 shadow-sm">
           <p class="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">승인 완료</p>
           <p class="mt-2 text-2xl font-black text-gray-900">{{ storeOrders.summary.approvedCount }}</p>
+        </article>
+        <article class="border border-gray-300 bg-white p-4 shadow-sm">
+          <p class="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">완료</p>
+          <p class="mt-2 text-2xl font-black text-gray-900">{{ storeOrders.summary.completedCount }}</p>
         </article>
       </section>
 

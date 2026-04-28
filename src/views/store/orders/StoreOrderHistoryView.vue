@@ -19,6 +19,7 @@ const STATUS_TABS = [
   { label: '전체', key: '전체' },
   { label: '승인 대기', key: 'REQUESTED' },
   { label: '승인 완료', key: 'APPROVED' },
+  { label: '완료', key: 'COMPLETED' },
   { label: '취소', key: 'CANCELLED' },
 ]
 
@@ -39,7 +40,8 @@ function headlineLabel(order) {
 function statusClass(status) {
   return {
     REQUESTED: 'bg-amber-100 text-amber-700',
-    APPROVED: 'bg-emerald-100 text-emerald-700',
+    APPROVED: 'bg-[#EBF5F5] text-black',
+    COMPLETED: 'bg-slate-200 text-slate-800',
     CANCELLED: 'bg-red-100 text-red-700',
   }[status] ?? 'bg-gray-100 text-gray-600'
 }

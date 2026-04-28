@@ -253,7 +253,7 @@ loadEditingOrder()
 const statusClass = {
   out: 'bg-red-100 text-red-700',
   low: 'bg-orange-100 text-orange-700',
-  normal: 'bg-emerald-100 text-emerald-700',
+  normal: 'bg-[#EBF5F5] text-black',
 }
 
 const statusLabel = {

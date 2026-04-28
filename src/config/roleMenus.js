@@ -109,7 +109,7 @@ export const roleMenus = {
       path: '/store/sales/register',
       icon: 'store',
       children: [
-        { label: '판매 등록', path: '/store/sales/register' },
+        { label: 'POS / 판매 등록', path: '/store/sales/register' },
         { label: '판매 내역', path: '/store/sales/history' },
         { label: '판매 분석', path: '/store/sales/analysis' },
       ],
@@ -126,10 +126,11 @@ export const roleMenus = {
     },
     {
       label: '입고 관리',
-      path: '/store/inbound',
+      path: '/store/inbound/list',
       icon: 'check',
       children: [
-        { label: '입고 관리', path: '/store/inbound' },
+        { label: '입고 리스트', path: '/store/inbound/list' },
+        { label: '입고 분석', path: '/store/inbound/analysis' },
       ],
     },
   ],
