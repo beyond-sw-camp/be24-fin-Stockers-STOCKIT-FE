@@ -29,23 +29,22 @@ const subCategoryOptions = computed(() => inventory.getSubCategories(selectedMai
 const filteredSkus = computed(() => {
   const keyword = searchTerm.value.trim().toLowerCase()
   return inventory.skus.filter((sku) => {
-    const matchMain = selectedMainCategory.value === '전체' || sku.mainCategory === selectedMainCategory.value
-    const matchSub = selectedSubCategory.value === '전체' || sku.subCategory === selectedSubCategory.value
+    const matchMain =
+      selectedMainCategory.value === '전체' || sku.mainCategory === selectedMainCategory.value
+    const matchSub =
+      selectedSubCategory.value === '전체' || sku.subCategory === selectedSubCategory.value
     const matchColor = selectedColor.value === '전체' || sku.color === selectedColor.value
-    const matchKeyword = !keyword || [
-      sku.productName,
-      sku.mainCategory,
-      sku.subCategory,
-      sku.color,
-      sku.size,
-    ].join(' ').toLowerCase().includes(keyword)
+    const matchKeyword =
+      !keyword ||
+      [sku.productName, sku.mainCategory, sku.subCategory, sku.color, sku.size]
+        .join(' ')
+        .toLowerCase()
+        .includes(keyword)
     return matchMain && matchSub && matchColor && matchKeyword
   })
 })
 
-const totalQuantity = computed(() =>
-  salesLines.value.reduce((sum, line) => sum + line.quantity, 0),
-)
+const totalQuantity = computed(() => salesLines.value.reduce((sum, line) => sum + line.quantity, 0))
 
 const totalAmount = computed(() =>
   salesLines.value.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0),
@@ -169,15 +168,17 @@ function handleLogout() {
           </div>
           <div class="text-right text-[11px] font-bold text-gray-500">
             <p>판매 목록 {{ salesLines.length }}건</p>
-            <p class="mt-1 text-gray-400">총 수량 {{ totalQuantity }}개 · 총 금액 ₩{{ totalAmount.toLocaleString() }}</p>
+            <p class="mt-1 text-gray-400">
+              총 수량 {{ totalQuantity }}개 · 총 금액 ₩{{ totalAmount.toLocaleString() }}
+            </p>
           </div>
         </div>
       </section>
 
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.82fr)_minmax(300px,0.9fr)]">
         <section class="border border-gray-300 bg-white shadow-sm">
           <div class="border-b border-gray-200 px-4 py-3">
-            <h2 class="text-sm font-black text-gray-900">상품 탐색</h2>
+            <h2 class="text-sm font-black text-gray-900">상품 검색</h2>
           </div>
 
           <div class="grid gap-3 border-b border-gray-200 bg-gray-50/80 px-4 py-4 md:grid-cols-4">
@@ -188,7 +189,11 @@ function handleLogout() {
                 class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
                 @change="resetSubCategoryIfNeeded"
               >
-                <option v-for="category in inventory.mainCategories" :key="category" :value="category">
+                <option
+                  v-for="category in inventory.mainCategories"
+                  :key="category"
+                  :value="category"
+                >
                   {{ category }}
                 </option>
               </select>
@@ -230,7 +235,7 @@ function handleLogout() {
           </div>
 
           <div class="overflow-x-auto">
-            <table class="min-w-[900px] w-full border-collapse text-xs">
+            <table class="min-w-[840px] w-full border-collapse text-xs">
               <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                 <tr>
                   <th class="px-4 py-3 text-left font-black">상품명</th>
@@ -254,23 +259,34 @@ function handleLogout() {
                   <td class="px-4 py-3 font-bold text-gray-600">
                     {{ sku.mainCategory }} &gt; {{ sku.subCategory }}
                   </td>
-                  <td class="px-4 py-3 font-bold text-gray-700">{{ sku.color }} / {{ sku.size }}</td>
-                  <td class="px-4 py-3 text-right font-black text-gray-900">₩{{ sku.unitPrice.toLocaleString() }}</td>
+                  <td class="px-4 py-3 font-bold text-gray-700">
+                    {{ sku.color }} / {{ sku.size }}
+                  </td>
+                  <td class="px-4 py-3 text-right font-black text-gray-900">
+                    ₩{{ sku.unitPrice.toLocaleString() }}
+                  </td>
                   <td class="px-4 py-3 text-center font-black text-gray-700">{{ sku.stock }}</td>
                   <td class="px-4 py-3 text-center">
-                    <span class="inline-flex min-w-12 justify-center px-2 py-1 text-[11px] font-black" :class="statusClass[inventory.stockStatus(sku)]">
+                    <span
+                      class="inline-flex min-w-12 justify-center px-2 py-1 text-[11px] font-black"
+                      :class="statusClass[inventory.stockStatus(sku)]"
+                    >
                       {{ statusLabel[inventory.stockStatus(sku)] }}
                     </span>
                   </td>
                   <td class="px-4 py-3 text-center">
                     <button
                       type="button"
-                      class="px-3 py-1.5 text-[11px] font-black transition-colors"
-                      :class="sku.stock === 0 ? 'cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-[#004D3C] text-white hover:bg-[#003d30]'"
+                      class="inline-flex min-w-[72px] items-center justify-center border px-3 py-2 text-[11px] font-black shadow-sm transition-all"
+                      :class="
+                        sku.stock === 0
+                          ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 shadow-none'
+                          : 'border-[#004D3C] bg-[#004D3C] !text-white hover:-translate-y-px hover:bg-[#003d30] hover:shadow-[0_8px_18px_rgba(32,140,28,0.22)]'
+                      "
                       :disabled="sku.stock === 0"
                       @click="addToSalesList(sku)"
                     >
-                      판매 목록 추가
+                      담기
                     </button>
                   </td>
                 </tr>
@@ -288,7 +304,9 @@ function handleLogout() {
           <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
             <div>
               <h2 class="text-sm font-black text-gray-900">판매 목록</h2>
-              <p class="mt-1 text-[11px] font-bold text-gray-400">선택한 SKU를 한 판매건으로 저장합니다.</p>
+              <p class="mt-1 text-[11px] font-bold text-gray-400">
+                선택한 SKU를 한 판매건으로 저장합니다.
+              </p>
             </div>
             <button
               type="button"
@@ -301,16 +319,24 @@ function handleLogout() {
           </div>
 
           <div class="flex max-h-[560px] flex-col overflow-y-auto">
-            <div v-if="salesLines.length === 0" class="flex min-h-[280px] items-center justify-center px-6 text-center text-sm font-bold text-gray-400">
+            <div
+              v-if="salesLines.length === 0"
+              class="flex min-h-[280px] items-center justify-center px-6 text-center text-sm font-bold text-gray-400"
+            >
               판매할 상품을 추가하면 이곳에 판매 목록이 쌓입니다.
             </div>
 
-            <div v-for="line in salesLines" :key="line.skuId" class="border-b border-gray-100 px-4 py-4">
+            <div
+              v-for="line in salesLines"
+              :key="line.skuId"
+              class="border-b border-gray-100 px-4 py-4"
+            >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-black text-gray-900">{{ line.productName }}</p>
                   <p class="mt-1 text-[11px] font-bold text-gray-500">
-                    {{ line.mainCategory }} &gt; {{ line.subCategory }} · {{ line.color }} / {{ line.size }}
+                    {{ line.mainCategory }} &gt; {{ line.subCategory }} · {{ line.color }} /
+                    {{ line.size }}
                   </p>
                 </div>
                 <button
@@ -324,7 +350,13 @@ function handleLogout() {
 
               <div class="mt-3 flex items-center justify-between gap-3">
                 <div class="inline-flex items-center border border-gray-300">
-                  <button type="button" class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50" @click="decreaseLine(line)">−</button>
+                  <button
+                    type="button"
+                    class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50"
+                    @click="decreaseLine(line)"
+                  >
+                    −
+                  </button>
                   <input
                     :value="line.quantity"
                     type="number"
@@ -333,11 +365,19 @@ function handleLogout() {
                     class="h-8 w-16 border-x border-gray-300 text-center text-xs font-black text-gray-900 outline-none"
                     @input="updateLineQuantity(line, $event.target.value)"
                   />
-                  <button type="button" class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50" @click="increaseLine(line)">+</button>
+                  <button
+                    type="button"
+                    class="h-8 w-8 text-sm font-black text-gray-600 hover:bg-gray-50"
+                    @click="increaseLine(line)"
+                  >
+                    +
+                  </button>
                 </div>
                 <div class="text-right">
                   <p class="text-[11px] font-bold text-gray-400">라인 금액</p>
-                  <p class="text-sm font-black text-gray-900">₩{{ (line.quantity * line.unitPrice).toLocaleString() }}</p>
+                  <p class="text-sm font-black text-gray-900">
+                    ₩{{ (line.quantity * line.unitPrice).toLocaleString() }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -356,7 +396,11 @@ function handleLogout() {
             <p
               v-if="feedbackMessage"
               class="mt-3 border px-3 py-2 text-[11px] font-black"
-              :class="feedbackMessage.includes('등록') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'"
+              :class="
+                feedbackMessage.includes('등록')
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-red-200 bg-red-50 text-red-700'
+              "
             >
               {{ feedbackMessage }}
             </p>
@@ -364,7 +408,11 @@ function handleLogout() {
             <button
               type="button"
               class="mt-4 h-11 w-full text-sm font-black transition-colors"
-              :class="salesLines.length === 0 ? 'cursor-not-allowed bg-gray-200 text-gray-400' : 'bg-[#004D3C] text-white hover:bg-[#003d30]'"
+              :class="
+                salesLines.length === 0
+                  ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                  : 'bg-[#004D3C] text-white hover:bg-[#003d30]'
+              "
               :disabled="salesLines.length === 0"
               @click="confirmSale"
             >

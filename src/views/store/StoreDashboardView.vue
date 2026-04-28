@@ -241,7 +241,7 @@ function handleLogout() {
         <div class="flex items-center justify-between border-b border-gray-200 px-3 py-2.5">
           <h3 class="text-sm font-medium text-gray-800">발주 현황</h3>
           <button type="button" class="text-xs font-semibold text-[#004D3C] hover:underline" @click="$router.push('/store/orders')">
-            주문 관리 바로가기
+            발주 관리 바로가기
           </button>
         </div>
         <div class="overflow-auto">

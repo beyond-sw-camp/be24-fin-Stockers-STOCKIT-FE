@@ -85,14 +85,14 @@ function handleLogout() {
         </div>
       </section>
 
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,1fr)]">
-        <section class="border border-gray-300 bg-white shadow-sm">
+      <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
+        <section class="min-w-0 self-start border border-gray-300 bg-white shadow-sm">
           <div class="border-b border-gray-200 px-4 py-3">
-            <h2 class="text-sm font-black text-gray-900">판매건 목록</h2>
+            <h2 class="text-sm font-extrabold text-gray-900">판매건 목록</h2>
           </div>
 
           <div class="overflow-x-auto">
-            <table class="min-w-[760px] w-full border-collapse text-xs">
+            <table class="min-w-[680px] w-full border-collapse text-xs">
               <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                 <tr>
                   <th class="px-4 py-3 text-left font-black">판매시각</th>
@@ -107,12 +107,14 @@ function handleLogout() {
                   v-for="sale in filteredSales"
                   :key="sale.saleId"
                   class="cursor-pointer transition-colors hover:bg-gray-50"
-                  :class="selectedSale?.saleId === sale.saleId ? 'bg-[#EBF5F5]' : ''"
+                  :class="selectedSale?.saleId === sale.saleId ? 'bg-[#EBF5F5] [&_td]:font-black [&_td]:text-black': ''"
                   @click="selectedSaleId = sale.saleId"
                 >
                   <td class="px-4 py-3 font-bold text-gray-600">{{ formatDateTime(sale.soldAt) }}</td>
                   <td class="px-4 py-3 font-mono font-black text-gray-800">{{ sale.saleId }}</td>
-                  <td class="px-4 py-3 font-black text-gray-900">{{ headlineLabel(sale) }}</td>
+                  <td class="px-4 py-3 font-black text-gray-900">
+                    <p class="truncate">{{ headlineLabel(sale) }}</p>
+                  </td>
                   <td class="px-4 py-3 text-right font-black text-gray-700">{{ sale.totalQuantity }}</td>
                   <td class="px-4 py-3 text-right font-black text-gray-900">₩{{ sale.totalAmount.toLocaleString() }}</td>
                 </tr>
@@ -124,9 +126,9 @@ function handleLogout() {
           </div>
         </section>
 
-        <section class="border border-gray-300 bg-white shadow-sm">
+        <section class="min-w-0 border border-gray-300 bg-white shadow-sm">
           <div class="border-b border-gray-200 px-4 py-3">
-            <h2 class="text-sm font-black text-gray-900">판매 상세</h2>
+            <h2 class="text-sm font-extrabold text-gray-900">판매 상세</h2>
           </div>
 
           <div v-if="selectedSale" class="flex flex-col gap-4 p-4">
@@ -142,28 +144,39 @@ function handleLogout() {
             </div>
 
             <div class="overflow-x-auto">
-              <table class="min-w-[640px] w-full border-collapse text-xs">
+              <table class="min-w-[520px] w-full border-collapse text-xs">
                 <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
                   <tr>
                     <th class="px-3 py-3 text-left font-black">상품명</th>
                     <th class="px-3 py-3 text-left font-black">카테고리</th>
-                    <th class="px-3 py-3 text-left font-black">옵션</th>
-                    <th class="px-3 py-3 text-right font-black">수량</th>
-                    <th class="px-3 py-3 text-right font-black">단가</th>
-                    <th class="px-3 py-3 text-right font-black">금액</th>
+                    <th class="px-2 py-3 text-left font-black">옵션</th>
+                    <th class="px-2 py-3 text-right font-black">수량</th>
+                    <th class="px-2 py-3 text-right font-black">단가</th>
+                    <th class="px-2 py-3 text-right font-black">금액</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="item in selectedSale.items" :key="`${selectedSale.saleId}-${item.skuId}`">
-                    <td class="px-3 py-3 font-black text-gray-900">{{ item.productName }}</td>
-                    <td class="px-3 py-3 font-bold text-gray-600">{{ item.mainCategory }} &gt; {{ item.subCategory }}</td>
-                    <td class="px-3 py-3 font-bold text-gray-700">{{ item.color }} / {{ item.size }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-700">{{ item.quantity }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-700">₩{{ item.unitPrice.toLocaleString() }}</td>
-                    <td class="px-3 py-3 text-right font-black text-gray-900">₩{{ item.lineAmount.toLocaleString() }}</td>
+                    <td class="px-3 py-3 font-black text-gray-900">
+                      <p class="truncate">{{ item.productName }}</p>
+                    </td>
+                    <td class="px-3 py-3 font-bold text-gray-600">
+                      <p class="truncate">{{ item.mainCategory }} &gt; {{ item.subCategory }}</p>
+                    </td>
+                    <td class="px-2 py-3 font-bold text-gray-700">
+                      <p class="truncate">{{ item.color }} / {{ item.size }}</p>
+                    </td>
+                    <td class="px-2 py-3 text-right font-black text-gray-700">{{ item.quantity }}</td>
+                    <td class="px-2 py-3 text-right font-black text-gray-700">₩{{ item.unitPrice.toLocaleString() }}</td>
+                    <td class="px-2 py-3 text-right font-black text-gray-900">₩{{ item.lineAmount.toLocaleString() }}</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-3 py-3">
+              <span class="text-xs font-bold text-gray-500">총 금액</span>
+              <span class="text-sm font-black text-gray-900">₩{{ selectedSale.totalAmount.toLocaleString() }}</span>
             </div>
           </div>
 

@@ -109,6 +109,14 @@ export const roleMenus = {
       ],
     },
     {
+      label: '재고 관리',
+      path: '/store/inventory',
+      icon: 'warehouse',
+      children: [
+        { label: '내 재고 관리', path: '/store/inventory' },
+      ],
+    },
+    {
       label: '판매 관리',
       path: '/store/sales/register',
       icon: 'store',
@@ -119,19 +127,11 @@ export const roleMenus = {
       ],
     },
     {
-      label: '주문 관리',
+      label: '발주 관리',
       path: '/store/orders',
       icon: 'file',
       children: [
-        { label: '주문 관리', path: '/store/orders' },
-      ],
-    },
-    {
-      label: '재고 관리',
-      path: '/store/inventory',
-      icon: 'warehouse',
-      children: [
-        { label: '내 재고 관리', path: '/store/inventory' },
+        { label: '발주 관리', path: '/store/orders' },
       ],
     },
     {
@@ -140,14 +140,6 @@ export const roleMenus = {
       icon: 'check',
       children: [
         { label: '입고 관리', path: '/store/inbound' },
-      ],
-    },
-    {
-      label: 'AI 리포트',
-      path: '/store/ai-report',
-      icon: 'chart',
-      children: [
-        { label: 'AI 리포트', path: '/store/ai-report' },
       ],
     },
   ],
