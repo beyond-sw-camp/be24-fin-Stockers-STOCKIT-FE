@@ -34,7 +34,8 @@ import HqCompanyWideInventorySkuDetailView from '@/views/hq/inventory/HqCompanyW
 import HqOrderManagementView from '@/views/hq/HqOrderManagementView.vue'
 import HqProductManagementView from '@/views/hq/HqProductManagementView.vue'
 import HqInfrastructureManagementView from '@/views/hq/HqInfrastructureManagementView.vue'
-import HqSettlementStatisticsView from '@/views/hq/HqSettlementStatisticsView.vue'
+import HqStoreDetailView from '@/views/hq/HqStoreDetailView.vue'
+import HqWarehouseDetailView from '@/views/hq/HqWarehouseDetailView.vue'
 import HqPurchaseOrderView from '@/views/hq/HqPurchaseOrderView.vue'
 import HqVendorManagementView from '@/views/hq/HqVendorManagementView.vue'
 import HqCategoryAddView from '@/views/hq/HqCategoryAddView.vue'
@@ -88,6 +89,18 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'hq' },
     },
     { path: '/hq/infrastructure', name: 'hq-infrastructure', component: HqInfrastructureManagementView, meta: { requiresAuth: true, role: 'hq' } },
+    {
+      path: '/hq/infrastructure/stores/:storeId',
+      name: 'hq-infrastructure-store-detail',
+      component: HqStoreDetailView,
+      meta: { requiresAuth: true, role: 'hq' },
+    },
+    {
+      path: '/hq/infrastructure/warehouses/:warehouseId',
+      name: 'hq-infrastructure-warehouse-detail',
+      component: HqWarehouseDetailView,
+      meta: { requiresAuth: true, role: 'hq' },
+    },
     { path: '/hq/analytics', name: 'hq-analytics', component: HqAnalyticsDashboardView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics/order-stats', name: 'hq-analytics-order-stats', component: HqAnalyticsOrderStatsView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/analytics/seasonal', name: 'hq-analytics-seasonal', component: HqAnalyticsSeasonalView, meta: { requiresAuth: true, role: 'hq' } },
