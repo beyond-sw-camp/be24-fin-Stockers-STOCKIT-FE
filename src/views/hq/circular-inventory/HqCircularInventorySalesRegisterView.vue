@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/common/AppLayout.vue'
+import CircularInventoryBrowseSection from '@/components/hq/circular-inventory/CircularInventoryBrowseSection.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useCircularInventoryStore } from '@/stores/circularInventory.js'
@@ -16,14 +17,6 @@ const circularInventoryMenus = roleMenus.hq.find(menu => menu.label === '순환 
 const activeTopMenu = computed(() => '순환 재고 관리')
 const activeSideMenu = ref('순환 재고 판매 등록')
 
-const selectedCategory = ref('')
-const selectedChildCategory = ref('')
-const materialFilters = ref([])
-const isMaterialDropdownOpen = ref(false)
-const materialDropdownRef = ref(null)
-const sortKey = ref('')
-const sortDirection = ref('asc')
-
 const buyerSearchTerm = ref('')
 const isBuyerDropdownOpen = ref(false)
 const buyerDropdownRef = ref(null)
@@ -32,70 +25,11 @@ const showFinalReviewModal = ref(false)
 const toastMessage = ref('')
 const toastTone = ref('success')
 
-const categoryOptions = ['상의', '바지', '치마', '아우터']
-const childCategoryMap = {
-  상의: ['반팔', '긴팔', '셔츠', '니트', '후드티'],
-  바지: ['청바지', '반바지', '긴바지', '츄리닝'],
-  치마: ['미니스커트', '롱스커트'],
-  아우터: ['패딩', '후드집업', '자켓', '가디건'],
-}
-const materialOptions = ['면', '폴리에스터', '울', '아크릴', '데님', '나일론', '폴리', '스판', '덕다운', '합성피혁']
-
-const childCategoryOptions = computed(() =>
-  selectedCategory.value ? childCategoryMap[selectedCategory.value] : [],
-)
-
-const activeMaterialFilters = computed(() =>
-  materialFilters.value.filter(filter => filter.material),
-)
-
-const materialFilterSummary = computed(() => {
-  if (activeMaterialFilters.value.length === 0) return '소재 조건 없음'
-
-  const [firstFilter] = activeMaterialFilters.value
-  const firstLabel = firstFilter.minRatio
-    ? `${firstFilter.material} ${firstFilter.minRatio}% 이상`
-    : firstFilter.material
-
-  return activeMaterialFilters.value.length > 1
-    ? `${firstLabel} 외 ${activeMaterialFilters.value.length - 1}건`
-    : firstLabel
-})
-
-const filteredInventoryBase = computed(() =>
-  circularInventoryStore.inventoryRows.filter((item) => {
-    const matchesCategory = !selectedCategory.value || item.parentCategory === selectedCategory.value
-    const matchesChildCategory = !selectedChildCategory.value || item.childCategory === selectedChildCategory.value
-    const matchesMaterial = activeMaterialFilters.value.every((filter) => {
-      const itemMaterial = item.materials.find(material => material.name === filter.material)
-      if (!itemMaterial) return false
-
-      const minRatio = Number(filter.minRatio) || 0
-      return minRatio === 0 || itemMaterial.ratio >= minRatio
-    })
-
-    return matchesCategory && matchesChildCategory && matchesMaterial
-  }),
-)
-
-const filteredInventory = computed(() => {
-  const rows = [...filteredInventoryBase.value]
-  if (!sortKey.value) return rows
-
-  return rows.sort((a, b) => {
-    const aValue = sortKey.value === 'weightKg' ? a.weightKg : a[sortKey.value]
-    const bValue = sortKey.value === 'weightKg' ? b.weightKg : b[sortKey.value]
-    const direction = sortDirection.value === 'asc' ? 1 : -1
-
-    return (aValue - bValue) * direction
-  })
-})
-
 const filteredBuyers = computed(() => circularInventoryStore.filteredBuyers(buyerSearchTerm.value))
-
 const selectedBuyer = computed(() => circularInventoryStore.selectedBuyer)
 const drawerSummary = computed(() => circularInventoryStore.draftSummary)
 const draftItems = computed(() => circularInventoryStore.draftItems)
+const draftInventoryIds = computed(() => draftItems.value.map(item => item.inventoryId))
 
 const canSubmit = computed(() =>
   Boolean(selectedBuyer.value)
@@ -107,64 +41,26 @@ const shouldRenderDrawer = computed(() =>
   isDrawerOpen.value || draftItems.value.length > 0,
 )
 
-const formatMaterials = (materials) =>
-  materials.map(material => `${material.name} ${material.ratio}%`).join(', ')
+const browseSummaryText = computed(() => `담긴 품목 ${draftItems.value.length.toLocaleString()}건`)
 
-const sortIcon = (key) => {
-  if (sortKey.value !== key) return '↕'
-  return sortDirection.value === 'asc' ? '▲' : '▼'
+function formatMaterials(materials) {
+  return materials.map(material => `${material.name} ${material.ratio}%`).join(', ')
 }
 
-const isMaterialDisabled = (material, index) =>
-  materialFilters.value.some((filter, filterIndex) => filterIndex !== index && filter.material === material)
-
-const isItemAdded = (inventoryId) =>
-  Boolean(circularInventoryStore.getDraftItem(inventoryId))
-
-const addMaterialFilter = () => {
-  if (materialFilters.value.length >= materialOptions.length) return
-  materialFilters.value = [...materialFilters.value, { material: '', minRatio: '' }]
+function isItemAdded(inventoryId) {
+  return Boolean(circularInventoryStore.getDraftItem(inventoryId))
 }
 
-const removeMaterialFilter = (index) => {
-  materialFilters.value = materialFilters.value.filter((_, filterIndex) => filterIndex !== index)
-}
-
-const clearMaterialFilters = () => {
-  materialFilters.value = []
-}
-
-const handleCategoryChange = () => {
-  selectedChildCategory.value = ''
-}
-
-const toggleSort = (key) => {
-  if (sortKey.value === key) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-    return
-  }
-
-  sortKey.value = key
-  sortDirection.value = 'asc'
-}
-
-const resetFilters = () => {
-  selectedCategory.value = ''
-  selectedChildCategory.value = ''
-  materialFilters.value = []
-  isMaterialDropdownOpen.value = false
-}
-
-const openDrawer = () => {
+function openDrawer() {
   isDrawerOpen.value = true
 }
 
-const toggleDrawer = () => {
+function toggleDrawer() {
   isDrawerOpen.value = !isDrawerOpen.value
 }
 
-const addItemToDraft = (inventoryId) => {
-  const result = circularInventoryStore.addSaleDraftItem(inventoryId)
+function addItemToDraft(row) {
+  const result = circularInventoryStore.addSaleDraftItem(row.inventoryId)
   if (!result.success) {
     toastMessage.value = result.message
     toastTone.value = 'error'
@@ -172,43 +68,43 @@ const addItemToDraft = (inventoryId) => {
   }
 
   isDrawerOpen.value = true
-  toastMessage.value = result.alreadyExists ? '이미 판매 패널에 담긴 품목입니다.' : '판매 패널에 품목을 추가했습니다.'
+  toastMessage.value = result.alreadyExists ? '이미 판매 패널에 담긴 항목입니다.' : '판매 패널에 항목을 추가했습니다.'
   toastTone.value = 'success'
 }
 
-const updateDraftItemField = (inventoryId, field, value) => {
+function updateDraftItemField(inventoryId, field, value) {
   circularInventoryStore.updateSaleDraftItem(inventoryId, { [field]: value })
 }
 
-const removeDraftItem = (inventoryId) => {
+function removeDraftItem(inventoryId) {
   circularInventoryStore.removeSaleDraftItem(inventoryId)
 }
 
-const selectBuyer = (buyer) => {
+function selectBuyer(buyer) {
   circularInventoryStore.selectBuyer(buyer.id)
   buyerSearchTerm.value = buyer.name
   isBuyerDropdownOpen.value = false
 }
 
-const clearDraftPanel = () => {
+function clearDraftPanel() {
   circularInventoryStore.clearDraft()
   buyerSearchTerm.value = ''
 }
 
-const openFinalReviewModal = () => {
+function openFinalReviewModal() {
   if (!canSubmit.value) return
   showFinalReviewModal.value = true
 }
 
-const returnToDrawerEdit = () => {
+function returnToDrawerEdit() {
   showFinalReviewModal.value = false
   isDrawerOpen.value = true
 }
 
-const submitSale = () => {
+function submitSale() {
   const result = circularInventoryStore.submitCircularInventorySale(auth.user?.name ?? '본사 관리자')
   toastMessage.value = result.success
-    ? `${result.sale.saleId} 판매 등록이 완료되었습니다.`
+    ? `${result.sale.saleId} 판매 등록을 완료했습니다.`
     : result.message
   toastTone.value = result.success ? 'success' : 'error'
 
@@ -219,10 +115,7 @@ const submitSale = () => {
   }
 }
 
-const handleDocumentClick = (event) => {
-  if (!materialDropdownRef.value?.contains(event.target)) {
-    isMaterialDropdownOpen.value = false
-  }
+function handleDocumentClick(event) {
   if (!buyerDropdownRef.value?.contains(event.target)) {
     isBuyerDropdownOpen.value = false
   }
@@ -260,7 +153,7 @@ onBeforeUnmount(() => {
             <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Circular Inventory Sales</p>
             <h1 class="mt-1 text-lg font-black text-gray-900">순환 재고 판매 등록</h1>
             <p class="mt-1 text-xs font-bold text-gray-500">
-              조회 리스트에서 판매할 순환 재고를 선택해 하단 판매 패널로 담고, 거래처별로 판매 등록합니다.
+              조회 리스트에서 판매할 순환 재고를 선택해 하단 판매 패널에 담고, 거래처별로 판매 등록합니다.
             </p>
           </div>
 
@@ -319,224 +212,39 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section class="border border-gray-200 bg-white p-4 shadow-sm">
-        <div class="grid items-end gap-3 xl:grid-cols-[8.5rem_9rem_minmax(18rem,1fr)_auto]">
-          <label class="flex flex-col gap-1.5">
-            <span class="text-[11px] font-bold text-gray-500">카테고리</span>
-            <select
-              v-model="selectedCategory"
-              class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]"
-              @change="handleCategoryChange"
-            >
-              <option value="">전체</option>
-              <option v-for="category in categoryOptions" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
-          </label>
-
-          <label class="flex flex-col gap-1.5">
-            <span class="text-[11px] font-bold text-gray-500">하위 카테고리</span>
-            <select
-              v-model="selectedChildCategory"
-              class="h-9 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C] disabled:bg-gray-50 disabled:text-gray-400"
-              :disabled="!selectedCategory"
-            >
-              <option value="">전체</option>
-              <option v-for="category in childCategoryOptions" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
-          </label>
-
-          <div ref="materialDropdownRef" class="relative flex flex-col gap-1.5">
-            <span class="text-[11px] font-bold text-gray-500">소재 조건</span>
-            <button
-              type="button"
-              class="flex h-9 w-full items-center justify-between gap-2 border border-gray-300 bg-white px-3 text-left text-xs font-bold text-gray-900 outline-none transition hover:bg-[#EBF5F5] focus:border-[#004D3C]"
-              @click="isMaterialDropdownOpen = !isMaterialDropdownOpen"
-            >
-              <span
-                class="min-w-0 truncate px-2 py-1 text-[11px]"
-                :class="activeMaterialFilters.length > 0 ? 'bg-[#EBF5F5] text-[#004D3C]' : 'text-gray-500'"
-              >
-                {{ materialFilterSummary }}
-              </span>
-              <span class="shrink-0 text-[10px] text-gray-500">{{ isMaterialDropdownOpen ? '▲' : '▼' }}</span>
-            </button>
-
-            <div
-              v-if="isMaterialDropdownOpen"
-              class="absolute left-0 top-full z-30 mt-1 w-[min(26rem,calc(100vw-2rem))] border border-gray-200 bg-white p-3 shadow-lg xl:w-full xl:min-w-[26rem]"
-            >
-              <div class="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
-                <div>
-                  <p class="text-xs font-black text-gray-900">소재 조건</p>
-                  <p class="mt-0.5 text-[10px] font-bold text-gray-400">여러 조건은 모두 만족하는 품목만 조회됩니다.</p>
-                </div>
-                <button
-                  type="button"
-                  class="text-[10px] font-black text-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:text-gray-300"
-                  :disabled="materialFilters.length === 0"
-                  @click="clearMaterialFilters"
-                >
-                  전체 해제
-                </button>
-              </div>
-
-              <div class="mt-3 max-h-56 space-y-2 overflow-y-auto">
-                <div
-                  v-for="(filter, index) in materialFilters"
-                  :key="index"
-                  class="grid grid-cols-[minmax(8rem,1fr)_6rem_auto_2rem] items-center gap-2"
-                >
-                  <select
-                    v-model="filter.material"
-                    class="h-8 border border-gray-200 bg-gray-50 px-2 text-[11px] font-bold text-gray-900 outline-none focus:border-[#004D3C] focus:bg-white"
-                  >
-                    <option value="">소재 선택</option>
-                    <option
-                      v-for="material in materialOptions"
-                      :key="material"
-                      :value="material"
-                      :disabled="isMaterialDisabled(material, index)"
-                    >
-                      {{ material }}
-                    </option>
-                  </select>
-
-                  <input
-                    v-model="filter.minRatio"
-                    type="number"
-                    min="0"
-                    max="100"
-                    class="h-8 border border-gray-200 bg-gray-50 px-2 text-right text-[11px] font-bold text-gray-900 outline-none focus:border-[#004D3C] focus:bg-white"
-                    placeholder="0"
-                  />
-                  <span class="text-[10px] font-black text-gray-400">% 이상</span>
-                  <button
-                    type="button"
-                    class="h-8 border border-gray-200 text-[12px] font-black text-gray-400 hover:bg-gray-50 hover:text-black"
-                    :aria-label="`${index + 1}번째 소재 조건 삭제`"
-                    @click="removeMaterialFilter(index)"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div
-                  v-if="materialFilters.length === 0"
-                  class="border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-center text-[11px] font-bold text-gray-400"
-                >
-                  추가된 소재 조건이 없습니다.
-                </div>
-              </div>
-
-              <button
-                type="button"
-                class="mt-3 h-8 w-full border border-[#D6EAEA] bg-[#EBF5F5] text-xs font-black text-[#004D3C] transition hover:bg-[#dff0f0] disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
-                :disabled="materialFilters.length >= materialOptions.length"
-                @click="addMaterialFilter"
-              >
-                + 조건 추가
-              </button>
-            </div>
-          </div>
-
+      <CircularInventoryBrowseSection
+        title="판매 대상 순환 재고 리스트"
+        description="순환 재고 조회 화면과 동일한 기준으로 SKU를 탐색하고, 판매 패널로 보낼 항목을 선택합니다."
+        :summary-text="browseSummaryText"
+        action-column-label="추가"
+        action-column-position="end"
+        :highlighted-row-ids="[]"
+      >
+        <template #row-action="{ row }">
           <button
             type="button"
-            class="h-9 border border-gray-300 bg-white px-4 text-xs font-black text-gray-700 hover:bg-gray-50"
-            @click="resetFilters"
+            class="inline-flex h-9 w-[8.75rem] items-center justify-center gap-2 rounded-full border px-3.5 text-[11px] font-black tracking-[0.01em] transition-all duration-150"
+            :class="isItemAdded(row.inventoryId)
+              ? 'border-[#B7D8D1] bg-[#F3FAF8] text-[#0F5C4D] shadow-[inset_0_0_0_1px_rgba(183,216,209,0.35)] hover:border-[#8EC5BA] hover:bg-[#EAF6F2]'
+              : 'border-[#C9D9EE] bg-[#EEF4FB] text-[#24476B] shadow-[inset_0_0_0_1px_rgba(201,217,238,0.45)] hover:-translate-y-[1px] hover:border-[#AFC7E5] hover:bg-[#E4EEF9] hover:shadow-[0_8px_18px_rgba(137,163,198,0.18)]'"
+            @click.stop="addItemToDraft(row)"
           >
-            초기화
+            <span
+              class="flex h-4 w-4 items-center justify-center rounded-full text-[10px]"
+              :class="isItemAdded(row.inventoryId) ? 'bg-[#DCEFEA] text-[#0F5C4D]' : 'bg-white text-[#24476B]'"
+            >
+              {{ isItemAdded(row.inventoryId) ? '✓' : '+' }}
+            </span>
+            <span>{{ isItemAdded(row.inventoryId) ? '패널에서 수정' : '판매 패널에 추가' }}</span>
           </button>
-        </div>
-      </section>
-
-      <section class="min-w-0 border border-gray-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <div>
-            <h2 class="text-sm font-black text-gray-900">판매 대상 순환 재고 리스트</h2>
-            <p class="mt-1 text-[11px] font-bold text-gray-400">
-              조회 {{ filteredInventory.length.toLocaleString() }}건 · 담김 {{ draftItems.length.toLocaleString() }}건
-            </p>
-          </div>
-          <p class="text-[11px] font-bold text-amber-700">
-            판매 kg 기준으로 등록하며, 실제 재고 차감은 환산 벌 수량 기준 올림 처리됩니다.
-          </p>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-[1120px] w-full border-collapse text-left text-xs">
-            <thead class="bg-gray-50 text-[10px] uppercase tracking-[0.12em] text-gray-500">
-              <tr>
-                <th class="px-3 py-3 font-black">품목 코드</th>
-                <th class="px-3 py-3 font-black">카테고리</th>
-                <th class="px-3 py-3 font-black">품목명</th>
-                <th class="px-3 py-3 font-black">소재</th>
-                <th class="px-3 py-3 text-right font-black">
-                  <button type="button" class="inline-flex items-center gap-1 hover:text-gray-900" @click="toggleSort('quantity')">
-                    수량
-                    <span class="text-[9px]">{{ sortIcon('quantity') }}</span>
-                  </button>
-                </th>
-                <th class="px-3 py-3 text-right font-black">
-                  <button type="button" class="inline-flex items-center gap-1 hover:text-gray-900" @click="toggleSort('weightKg')">
-                    무게
-                    <span class="text-[9px]">{{ sortIcon('weightKg') }}</span>
-                  </button>
-                </th>
-                <th class="px-3 py-3 text-right font-black">개당 무게</th>
-                <th class="px-3 py-3 text-center font-black">추가</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr
-                v-for="item in filteredInventory"
-                :key="item.id"
-                class="transition hover:bg-[#EBF5F5]/40"
-              >
-                <td class="px-3 py-3 font-mono font-bold text-gray-500">{{ item.itemCode }}</td>
-                <td class="px-3 py-3 font-bold text-gray-700">{{ item.parentCategory }} &gt; {{ item.childCategory }}</td>
-                <td class="px-3 py-3 font-black text-gray-900">{{ item.itemName }}</td>
-                <td class="px-3 py-3 font-black text-gray-900">{{ formatMaterials(item.materials) }}</td>
-                <td class="px-3 py-3 text-right font-black text-gray-900">{{ item.quantity.toLocaleString() }}</td>
-                <td class="px-3 py-3 text-right font-black text-gray-900">{{ circularInventoryStore.formatWeight(item.weightKg) }}</td>
-                <td class="px-3 py-3 text-right font-bold text-gray-600">{{ item.unitWeightKg.toFixed(3) }}kg</td>
-                <td class="px-3 py-3 text-center">
-                  <button
-                    type="button"
-                    class="inline-flex h-9 w-[8.75rem] items-center justify-center gap-2 rounded-full border px-3.5 text-[11px] font-black tracking-[0.01em] transition-all duration-150"
-                    :class="isItemAdded(item.id)
-                      ? 'border-[#B7D8D1] bg-[#F3FAF8] text-[#0F5C4D] shadow-[inset_0_0_0_1px_rgba(183,216,209,0.35)] hover:border-[#8EC5BA] hover:bg-[#EAF6F2]'
-                      : 'border-[#C9D9EE] bg-[#EEF4FB] text-[#24476B] shadow-[inset_0_0_0_1px_rgba(201,217,238,0.45)] hover:-translate-y-[1px] hover:border-[#AFC7E5] hover:bg-[#E4EEF9] hover:shadow-[0_8px_18px_rgba(137,163,198,0.18)]'"
-                    @click="addItemToDraft(item.id)"
-                  >
-                    <span
-                      class="flex h-4 w-4 items-center justify-center rounded-full text-[10px]"
-                      :class="isItemAdded(item.id) ? 'bg-[#DCEFEA] text-[#0F5C4D]' : 'bg-white text-[#24476B]'"
-                    >
-                      {{ isItemAdded(item.id) ? '✓' : '+' }}
-                    </span>
-                    <span>{{ isItemAdded(item.id) ? '패널에서 수정' : '판매 패널에 추가' }}</span>
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="filteredInventory.length === 0">
-                <td colspan="8" class="px-3 py-14 text-center text-sm font-bold text-gray-400">
-                  조건에 맞는 순환 재고가 없습니다.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </template>
+      </CircularInventoryBrowseSection>
 
       <div
         v-if="shouldRenderDrawer"
         class="fixed bottom-0 right-0 z-20 w-full border-t border-gray-200 bg-white/95 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur"
       >
-        <div class="flex w-full flex-col gap-3 px-4 py-3">
+        <div class="flex w-full flex-col gap-5 px-4 py-3">
           <button
             type="button"
             class="flex w-full items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-left"
@@ -554,7 +262,7 @@ onBeforeUnmount(() => {
             </div>
           </button>
 
-          <div v-if="isDrawerOpen" class="grid w-full gap-6 rounded-md border border-gray-200 bg-white p-4 xl:grid-cols-[minmax(0,1fr)_minmax(17rem,21rem)] xl:gap-8">
+          <div v-if="isDrawerOpen" class="grid w-full gap-6 rounded-md border border-gray-200 bg-white p-4 xl:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] xl:gap-8">
             <div class="min-w-0">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -657,7 +365,7 @@ onBeforeUnmount(() => {
                 <div>
                   <p class="text-sm font-black text-gray-900">아직 추가된 판매 품목이 없습니다.</p>
                   <p class="mt-2 text-xs font-bold text-gray-400">
-                    위 순환 재고 리스트에서 <span class="text-[#24476B]">판매 패널에 추가</span> 버튼을 눌러 판매할 재고를 담아주세요.
+                    위 순환 재고 리스트에서 <span class="text-[#24476B]">+ 선택</span> 버튼을 눌러 판매할 재고를 담아주세요.
                   </p>
                 </div>
               </div>
@@ -814,7 +522,7 @@ onBeforeUnmount(() => {
                 <div class="flex flex-col gap-4">
                   <section class="border border-blue-200 bg-blue-50 px-4 py-4">
                     <p class="text-[10px] font-black uppercase tracking-[0.12em] text-blue-500">차감 규칙 안내</p>
-                    <p class="mt-2 text-xs font-black text-blue-700">판매 kg 기준으로 입력했으며, 실제 재고 차감은 환산 벌 수량 기준 올림 처리됩니다.</p>
+                    <p class="mt-2 text-xs font-black text-blue-700">판매 kg 기준으로 입력하며 실제 재고 차감은 환산 벌 수량 기준 올림 처리됩니다.</p>
                   </section>
 
                   <section class="border border-gray-200 bg-white px-4 py-4">
