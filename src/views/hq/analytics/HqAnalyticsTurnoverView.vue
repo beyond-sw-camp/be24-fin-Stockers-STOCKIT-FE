@@ -413,16 +413,11 @@ const turnoverTrendChartOptions = {
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-gray-500">
-              선택 {{ selectedDeadStock.length }}건 · {{ selectedTotalUnits }}개 ·
-              <span class="text-red-600">₩{{ selectedTotalValue }}M</span>
-            </span>
             <button
-              class="border border-[#004D3C] bg-[#004D3C] px-3 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-[#003d30] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:border-gray-300"
-              :disabled="!selectedDeadStock.length"
-              @click="transferToCirculation(selectedDeadStock)"
+              class="border border-[#004D3C] bg-[#004D3C] px-3 py-2 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-[#003d30]"
+              @click="router.push('/hq/circular-inventory/candidates')"
             >
-              🔄 선택 항목 순환재고 전환
+              🔄 순환재고 후보 조회
             </button>
           </div>
         </header>
@@ -442,7 +437,6 @@ const turnoverTrendChartOptions = {
                 <th class="w-20 px-3 py-2 text-right font-bold">회전율</th>
                 <th class="w-20 px-3 py-2 text-right font-bold">수량</th>
                 <th class="w-24 px-3 py-2 text-right font-bold">묶인 금액</th>
-                <th class="w-32 px-3 py-2 text-center font-bold">전환</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -469,14 +463,6 @@ const turnoverTrendChartOptions = {
                 </td>
                 <td class="px-3 py-2 text-right font-mono text-gray-700">{{ d.units }}개</td>
                 <td class="px-3 py-2 text-right font-mono font-bold text-red-700">₩{{ d.value }}M</td>
-                <td class="px-3 py-2 text-center">
-                  <button
-                    class="inline-flex items-center gap-1 border border-[#004D3C] bg-white px-2 py-1 text-[10px] font-bold text-[#004D3C] transition-colors hover:bg-[#004D3C] hover:text-white"
-                    @click="transferToCirculation(d)"
-                  >
-                    🔄 순환재고 전환
-                  </button>
-                </td>
               </tr>
             </tbody>
           </table>

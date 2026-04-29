@@ -38,13 +38,13 @@ const dateLabel = computed(() =>
   new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
 )
 
-// 횡단 KPI (5개)
+// 횡단 KPI (5개) — 핵심 숫자만 강조
 const kpiStats = [
-  { label: '금일 누적 매출', value: '128.4', unit: 'M원', sub: '전일 마감 대비 +8.2%', icon: TrendingUp, valueCls: 'text-emerald-700', iconBg: 'bg-emerald-50', iconCls: 'text-emerald-600' },
-  { label: '전주 대비 증감률', value: '+6.4', unit: '%', sub: '직영점 성장 주도', icon: TrendingUp, valueCls: 'text-blue-700', iconBg: 'bg-blue-50', iconCls: 'text-blue-600' },
-  { label: '총 발주 금액', value: '42.8', unit: 'M원', sub: '승인 대기 18건', icon: Truck, valueCls: 'text-amber-700', iconBg: 'bg-amber-50', iconCls: 'text-amber-600' },
-  { label: '평균 회전율', value: '4.2', unit: 'x', sub: '목표 4.5x 미달', icon: Repeat, valueCls: 'text-violet-700', iconBg: 'bg-violet-50', iconCls: 'text-violet-600' },
-  { label: '품절 위험 SKU', value: '27', unit: '개', sub: '전주 대비 -5', icon: AlertCircle, valueCls: 'text-red-700', iconBg: 'bg-red-50', iconCls: 'text-red-600' },
+  { label: '금일 매출',     value: '128.4', unit: 'M원', sub: '↗ +8.2%',         icon: TrendingUp,   valueCls: 'text-emerald-700', iconBg: 'bg-emerald-50', iconCls: 'text-emerald-600', subCls: 'text-emerald-600' },
+  { label: '평균 회전율',    value: '4.2',   unit: 'x',   sub: '⚠ 목표 4.5x 미달', icon: Repeat,       valueCls: 'text-violet-700', iconBg: 'bg-violet-50', iconCls: 'text-violet-600', subCls: 'text-amber-600' },
+  { label: '이번 달 발주',   value: '42.8',  unit: 'M원', sub: '승인 대기 18건',   icon: Truck,        valueCls: 'text-amber-700',  iconBg: 'bg-amber-50',  iconCls: 'text-amber-600',  subCls: 'text-gray-500' },
+  { label: '활성 거래처',    value: '14',    unit: '곳',  sub: 'A 6 · B 5 · C 3',  icon: Calendar,     valueCls: 'text-blue-700',   iconBg: 'bg-blue-50',   iconCls: 'text-blue-600',   subCls: 'text-gray-500' },
+  { label: '🚨 위험 알림',   value: '12',    unit: '건',  sub: '악성재고 ₩22.4M',  icon: AlertCircle,  valueCls: 'text-red-700',    iconBg: 'bg-red-50',    iconCls: 'text-red-600',    subCls: 'text-red-600' },
 ]
 
 // 일자별 매출 추이 (12일)
@@ -173,7 +173,7 @@ const orderCycleSummary = {
             기준: {{ dateLabel }}
           </span>
         </div>
-        <span class="text-[11px] text-gray-500">5개 분석 영역의 핵심 지표를 한 화면에서 모니터링</span>
+        <span class="text-[11px] text-gray-500">4개 통계의 핵심 지표 + 즉시 액션을 한 화면에서 모니터링</span>
       </section>
 
       <!-- 횡단 KPI 5개 -->
@@ -191,10 +191,10 @@ const orderCycleSummary = {
           </div>
           <div>
             <div class="flex items-end gap-1 leading-none">
-              <span :class="[m.valueCls, 'text-[20px] font-bold tracking-tight']">{{ m.value }}</span>
+              <span :class="[m.valueCls, 'text-[22px] font-black tracking-tight']">{{ m.value }}</span>
               <span class="mb-0.5 text-[11px] text-gray-400">{{ m.unit }}</span>
             </div>
-            <p class="mt-1 truncate text-[10px] text-gray-400">{{ m.sub }}</p>
+            <p class="mt-1 truncate text-[10px] font-bold" :class="m.subCls ?? 'text-gray-400'">{{ m.sub }}</p>
           </div>
         </article>
       </section>
@@ -237,7 +237,7 @@ const orderCycleSummary = {
         </article>
       </section>
 
-      <!-- 5개 분석 영역 위젯 -->
+      <!-- 분석 영역 — 각 통계 페이지로의 점프 카드 (핵심 1개 메트릭만 강조) -->
       <section class="border border-gray-300 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-200 px-3 py-2.5">
           <div>
@@ -247,204 +247,148 @@ const orderCycleSummary = {
         </div>
 
         <div class="grid gap-px bg-gray-200 md:grid-cols-2 xl:grid-cols-3">
-          <!-- 소재별 판매량 -->
+          <!-- 1. 판매량 통계 — 매출 1위 품목 강조 -->
           <router-link
-            to="/hq/analytics/sales?tab=item"
-            class="group flex flex-col gap-2 bg-white p-3 transition-colors hover:bg-emerald-50/30"
+            to="/hq/analytics/sales"
+            class="group flex flex-col gap-3 bg-white p-4 transition-colors hover:bg-emerald-50/30"
           >
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-2">
                 <div class="flex h-8 w-8 items-center justify-center bg-emerald-50">
                   <BarChart3 :size="14" class="text-emerald-600" />
                 </div>
-                <p class="text-[12px] font-semibold text-gray-800">소재별 판매량 및 비중</p>
+                <p class="text-[12px] font-bold text-gray-800">판매량 통계</p>
               </div>
               <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-emerald-600" />
             </div>
-            <p class="text-[10px] text-gray-500">소재(원단) 단위로 분석한 매출 점유율 TOP 3</p>
-            <div class="space-y-1.5 border-y border-gray-100 py-2">
-              <div v-for="(t, i) in topMaterials" :key="t.name" class="flex items-center gap-2">
-                <span class="inline-flex h-4 w-4 shrink-0 items-center justify-center bg-emerald-100 text-[9px] font-black text-emerald-700">{{ i + 1 }}</span>
-                <p class="min-w-0 flex-1 truncate text-[11px] font-medium text-gray-700">{{ t.name }}</p>
-                <span class="shrink-0 text-[10px] text-gray-500">₩{{ t.sales }}M</span>
-                <span class="w-10 shrink-0 text-right text-[10px] font-bold text-emerald-700">{{ t.share }}%</span>
-              </div>
+            <div>
+              <p class="text-[10px] font-bold uppercase text-gray-400">🏆 매출 1위 품목</p>
+              <p class="mt-1 text-2xl font-black text-emerald-700">패딩</p>
+              <p class="mt-1 text-[11px] text-gray-500">₩68M · 850개 판매</p>
             </div>
-            <div class="flex items-center justify-between text-[10px] text-gray-500">
-              <span>총 매출 <span class="font-bold text-gray-700">₩{{ totalMaterialSales }}M</span></span>
-              <span class="text-gray-400">14종 · 이번 달</span>
-            </div>
+            <p class="border-l-2 border-emerald-500 bg-emerald-50/50 px-2 py-1 text-[10px] font-bold text-emerald-700">
+              아우터 카테고리 · 전체 매출 비중 14%
+            </p>
           </router-link>
 
-          <!-- 시간대 매출 패턴 -->
-          <router-link
-            to="/hq/analytics/sales?tab=time"
-            class="group flex flex-col gap-2 bg-white p-3 transition-colors hover:bg-emerald-50/30"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center bg-blue-50">
-                  <Clock :size="14" class="text-blue-600" />
-                </div>
-                <p class="text-[12px] font-semibold text-gray-800">시간대·요일 매출 패턴</p>
-              </div>
-              <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-blue-600" />
-            </div>
-            <p class="text-[10px] text-gray-500">하루 24시간 매출 분포 (어제 기준)</p>
-            <div class="flex h-12 items-end gap-px">
-              <div
-                v-for="(v, i) in hourlySpark"
-                :key="i"
-                class="flex-1 bg-blue-400"
-                :class="{ 'bg-blue-700': i === peakHour }"
-                :style="{ height: (v / maxHourly * 100) + '%' }"
-                :title="`${i}시: ${v.toFixed(1)}M`"
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-2 border-y border-gray-100 py-2 text-[10px]">
-              <div>
-                <p class="text-gray-500">🔥 피크 시간</p>
-                <p class="mt-0.5 font-bold text-blue-700">{{ peakHour }}시 · ₩{{ maxHourly.toFixed(1) }}M</p>
-              </div>
-              <div>
-                <p class="text-gray-500">하루 매출</p>
-                <p class="mt-0.5 font-bold text-gray-700">₩{{ totalDailySales.toFixed(0) }}M</p>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-[10px] text-gray-500">
-              <span>최고 요일 <span class="font-bold text-blue-700">토요일</span></span>
-              <span class="text-gray-400">30일 평균</span>
-            </div>
-          </router-link>
-
-          <!-- 재고 회전율 -->
+          <!-- 2. 재고 회전율 통계 — 회전율 + 악성재고 위험 강조 -->
           <router-link
             to="/hq/analytics/turnover"
-            class="group flex flex-col gap-2 bg-white p-3 transition-colors hover:bg-emerald-50/30"
+            class="group flex flex-col gap-3 bg-white p-4 transition-colors hover:bg-violet-50/30"
           >
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-2">
                 <div class="flex h-8 w-8 items-center justify-center bg-violet-50">
                   <Repeat :size="14" class="text-violet-600" />
                 </div>
-                <p class="text-[12px] font-semibold text-gray-800">재고 회전율</p>
+                <p class="text-[12px] font-bold text-gray-800">재고 회전율 통계</p>
               </div>
               <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-violet-600" />
             </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-[26px] font-black text-violet-700">{{ turnoverSummary.avg }}</span>
-              <span class="text-[11px] font-medium text-gray-500">회 / 월</span>
+            <div>
+              <p class="text-[10px] font-bold uppercase text-gray-400">평균 회전율 · 보유일</p>
+              <p class="mt-1 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-violet-700">{{ turnoverSummary.avg }}x</span>
+                <span class="text-[11px] font-bold text-gray-500">87일 보유</span>
+              </p>
+              <p class="mt-1 text-[11px] text-gray-500">목표 4.5x ⚠ 미달</p>
             </div>
-            <p class="text-[10px] text-gray-500">한 달에 평균 {{ turnoverSummary.avg }}회 재고가 교체됨</p>
-            <div class="space-y-1.5 border-y border-gray-100 py-2 text-[10px]">
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">목표 회전율</span>
-                <span class="font-medium" :class="turnoverSummary.avg >= turnoverSummary.target ? 'text-emerald-700' : 'text-red-600'">
-                  {{ turnoverSummary.target }}회 ({{ turnoverSummary.avg >= turnoverSummary.target ? '달성 ✓' : '미달 ⚠' }})
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">우수 매장</span>
-                <span class="font-medium text-emerald-700">{{ turnoverSummary.best.name }} ({{ turnoverSummary.best.value }}회)</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">주의 매장</span>
-                <span class="font-medium text-red-600">{{ turnoverSummary.worst.name }} · {{ turnoverSummary.worst.days }}일 보유</span>
-              </div>
-            </div>
-            <span class="text-[10px] text-gray-400">{{ turnoverSummary.storeCount }}개 매장 · 최근 6개월 평균</span>
+            <p class="border-l-2 border-red-500 bg-red-50/50 px-2 py-1 text-[10px] font-bold text-red-700">
+              🚨 악성 재고 12건 · ₩22.4M 묶임
+            </p>
           </router-link>
 
-          <!-- 계절별 판매 변화 -->
-          <router-link
-            to="/hq/analytics/sales?tab=seasonal"
-            class="group flex flex-col gap-2 bg-white p-3 transition-colors hover:bg-emerald-50/30"
-          >
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center bg-amber-50">
-                  <Calendar :size="14" class="text-amber-600" />
-                </div>
-                <p class="text-[12px] font-semibold text-gray-800">계절별 판매 변화</p>
-              </div>
-              <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-amber-600" />
-            </div>
-            <p class="text-[10px] text-gray-500">계절별 매출 비중 (단위: 백만원)</p>
-            <div class="grid grid-cols-4 gap-1.5">
-              <div
-                v-for="s in seasonsSummary"
-                :key="s.season"
-                class="text-center"
-                :title="`${s.season}: ${s.sales}M (${s.share}%)`"
-              >
-                <div class="flex h-10 items-end overflow-hidden bg-gray-100">
-                  <div class="w-full" :class="s.color" :style="{ height: (s.sales / maxSeason * 100) + '%' }" />
-                </div>
-                <p class="mt-1 text-[9px] font-bold" :class="s.textCls">{{ s.season }}</p>
-                <p class="text-[9px] text-gray-400">{{ s.sales }}M</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 border-y border-gray-100 py-2 text-[10px]">
-              <div>
-                <p class="text-gray-500">🏆 베스트 시즌</p>
-                <p class="mt-0.5 font-bold text-amber-700">여름 (27.8%)</p>
-              </div>
-              <div>
-                <p class="text-gray-500">연간 매출</p>
-                <p class="mt-0.5 font-bold text-gray-700">₩{{ totalAnnualSales }}M</p>
-              </div>
-            </div>
-            <span class="text-[10px] text-gray-400">2026년 · 4계절 합계</span>
-          </router-link>
-
-          <!-- 발주량 통계 -->
+          <!-- 3. 발주량 통계 — 발주 주기 강조 -->
           <router-link
             to="/hq/analytics/order-stats"
-            class="group flex flex-col gap-2 bg-white p-3 transition-colors hover:bg-emerald-50/30"
+            class="group flex flex-col gap-3 bg-white p-4 transition-colors hover:bg-orange-50/30"
           >
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-2">
                 <div class="flex h-8 w-8 items-center justify-center bg-orange-50">
                   <Truck :size="14" class="text-orange-600" />
                 </div>
-                <p class="text-[12px] font-semibold text-gray-800">발주량 통계</p>
+                <p class="text-[12px] font-bold text-gray-800">발주량 통계</p>
               </div>
               <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-orange-600" />
             </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-[26px] font-black text-orange-700">{{ orderCycleSummary.avgCycle }}</span>
-              <span class="text-[11px] font-medium text-gray-500">일 / 회</span>
+            <div>
+              <p class="text-[10px] font-bold uppercase text-gray-400">평균 발주 주기</p>
+              <p class="mt-1 flex items-baseline gap-2">
+                <span class="text-2xl font-black text-orange-700">{{ orderCycleSummary.avgCycle }}</span>
+                <span class="text-[11px] font-bold text-gray-500">일 / 회</span>
+              </p>
+              <p class="mt-1 text-[11px] text-gray-500">최근 6개월 {{ orderCycleSummary.totalOrders }}건 누적</p>
             </div>
-            <p class="text-[10px] text-gray-500">품목당 평균 {{ orderCycleSummary.avgCycle }}일에 1회 발주 (재입고 주기)</p>
-            <div class="space-y-1.5 border-y border-gray-100 py-2 text-[10px]">
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">⚡ 최단 주기</span>
-                <span class="truncate font-medium text-emerald-700">{{ orderCycleSummary.shortest.name }} · {{ orderCycleSummary.shortest.cycle }}일</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">🐢 최장 주기</span>
-                <span class="truncate font-medium text-amber-700">{{ orderCycleSummary.longest.name }} · {{ orderCycleSummary.longest.cycle }}일</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-500">관리 품목</span>
-                <span class="font-medium text-gray-700">{{ orderCycleSummary.managedItems }}종</span>
-              </div>
-            </div>
-            <span class="text-[10px] text-gray-400">최근 6개월 누적 {{ orderCycleSummary.totalOrders }}건</span>
+            <p class="border-l-2 border-amber-500 bg-amber-50/50 px-2 py-1 text-[10px] font-bold text-amber-700">
+              📋 승인 대기 18건 · 즉시 처리 권장
+            </p>
           </router-link>
 
-          <!-- 6번째 셀: 리포트 센터 -->
-          <div class="flex flex-col gap-2 bg-white p-3">
+          <!-- 4. 순환재고 거래처 통계 — 거래처 등급 + TOP 강조 -->
+          <router-link
+            to="/hq/analytics/vendors"
+            class="group flex flex-col gap-3 bg-white p-4 transition-colors hover:bg-blue-50/30"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center bg-blue-50">
+                  <Calendar :size="14" class="text-blue-600" />
+                </div>
+                <p class="text-[12px] font-bold text-gray-800">순환재고 거래처 통계</p>
+              </div>
+              <ArrowRight :size="14" class="text-gray-300 transition-colors group-hover:text-blue-600" />
+            </div>
+            <div>
+              <p class="text-[10px] font-bold uppercase text-gray-400">⭐ TOP 거래처</p>
+              <p class="mt-1 text-2xl font-black text-blue-700">(주)봄섬유</p>
+              <p class="mt-1 text-[11px] text-gray-500">Cotton (면) · ₩280M / 의존도 18%</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-[10px]">
+              <span class="bg-emerald-100 px-2 py-0.5 font-black text-emerald-700">A 6</span>
+              <span class="bg-blue-100 px-2 py-0.5 font-black text-blue-700">B 5</span>
+              <span class="bg-red-100 px-2 py-0.5 font-black text-red-700">C 3</span>
+            </div>
+          </router-link>
+
+          <!-- 5. 즉시 액션 보드 -->
+          <div class="flex flex-col gap-3 bg-white p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center bg-rose-50">
+                  <AlertCircle :size="14" class="text-rose-600" />
+                </div>
+                <p class="text-[12px] font-bold text-gray-800">🎯 즉시 액션</p>
+              </div>
+              <span class="text-[10px] font-black text-red-600">3건</span>
+            </div>
+            <ul class="space-y-1.5 text-[11px]">
+              <li class="flex items-start gap-2 border-l-2 border-red-500 bg-red-50/50 px-2 py-1">
+                <span class="font-bold text-red-700">🚨</span>
+                <span class="text-gray-700">패딩 245일 보유 — 순환재고 전환</span>
+              </li>
+              <li class="flex items-start gap-2 border-l-2 border-amber-500 bg-amber-50/50 px-2 py-1">
+                <span class="font-bold text-amber-700">⚠️</span>
+                <span class="text-gray-700">가나섬유 단가 +5% — 협상 필요</span>
+              </li>
+              <li class="flex items-start gap-2 border-l-2 border-blue-500 bg-blue-50/50 px-2 py-1">
+                <span class="font-bold text-blue-700">📋</span>
+                <span class="text-gray-700">발주 결재 대기 18건 — 승인</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 6. 리포트 센터 -->
+          <div class="flex flex-col gap-3 bg-white p-4">
             <div class="flex items-start justify-between">
               <div class="flex items-center gap-2">
                 <div class="flex h-8 w-8 items-center justify-center bg-gray-100">
                   <Download :size="14" class="text-gray-700" />
                 </div>
-                <p class="text-[12px] font-semibold text-gray-800">리포트 센터</p>
+                <p class="text-[12px] font-bold text-gray-800">리포트 센터</p>
               </div>
             </div>
-            <p class="text-[10px] text-gray-500">통계 데이터를 PDF·Excel로 내보내기</p>
-            <div class="flex flex-col gap-1.5 border-y border-gray-100 py-2">
+            <div class="flex flex-col gap-1.5">
               <button
                 type="button"
                 class="group/btn flex items-center gap-2 border border-gray-200 bg-white px-2 py-1.5 text-left transition-colors hover:border-rose-300 hover:bg-rose-50/50"
@@ -458,7 +402,7 @@ const orderCycleSummary = {
                 class="group/btn flex items-center gap-2 border border-gray-200 bg-white px-2 py-1.5 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/50"
               >
                 <FileSpreadsheet :size="12" class="text-emerald-600" />
-                <span class="flex-1 text-[10px] font-medium text-gray-700">5개 지표 Excel 일괄</span>
+                <span class="flex-1 text-[10px] font-medium text-gray-700">4개 통계 Excel 일괄</span>
                 <Download :size="10" class="text-gray-300 group-hover/btn:text-emerald-600" />
               </button>
               <button
