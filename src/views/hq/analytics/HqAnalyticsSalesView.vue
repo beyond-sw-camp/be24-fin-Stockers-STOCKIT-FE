@@ -6,7 +6,6 @@ import {
   ShoppingBag,
   TrendingUp,
   Award,
-  Download,
   Filter,
   PieChart,
   Package,
@@ -540,10 +539,6 @@ const barOptions = {
   },
 }
 
-// CSV 다운로드
-const downloadCsv = () => {
-  alert('현재 탭(' + tabs.find((t) => t.key === activeTab.value)?.label + ') 데이터가 다운로드됩니다. (BE 연동 필요)')
-}
 </script>
 
 <template>
@@ -565,15 +560,6 @@ const downloadCsv = () => {
             판매량 통계
           </h2>
           <p class="mt-1 text-[11px] text-gray-500">기준일: {{ dateLabel }} · 소재별·시간·계절을 한 화면에서 비교</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            class="inline-flex items-center gap-1.5 border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50"
-            @click="downloadCsv"
-          >
-            <Download :size="14" />
-            CSV 다운로드
-          </button>
         </div>
       </section>
 
