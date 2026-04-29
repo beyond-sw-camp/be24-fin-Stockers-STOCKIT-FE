@@ -43,6 +43,18 @@ const auth = useAuthStore()
 
 const userName = computed(() => auth.user?.name ?? '사용자')
 const isHq = computed(() => auth.user?.role === 'hq')
+const roleLabel = computed(() => {
+  switch (auth.user?.role) {
+    case 'hq': return '본사 관리자'
+    case 'store': return '매장 관리자'
+    case 'warehouse': return '물류창고 관리자'
+    default: return ''
+  }
+})
+const storeName = computed(() => {
+  if (auth.user?.role === 'hq') return ''
+  return auth.user?.storeName ?? ''
+})
 const userInitials = computed(() => {
   const name = auth.user?.name ?? ''
   return name.slice(-2).toUpperCase() || 'US'
@@ -55,6 +67,9 @@ const hasTopMenus = computed(() => Boolean(props.topMenus?.length))
 const topMenus = computed(() => props.topMenus ?? [])
 const currentNavigationLabel = computed(() => props.activeTopMenu || 'Navigation')
 const openTopMenus = sharedOpenTopMenus
+
+const treeMode = ref(false)
+const toggleTreeMode = () => { treeMode.value = !treeMode.value }
 
 const handleTopMenuClick = (menu) => {
   const isOpen = openTopMenus.value.includes(menu.label)
@@ -188,6 +203,41 @@ const LeafIcon = IconBase([
   { tag: 'path', attrs: { d: 'M2 22c5-2 9-6 12-12' } },
 ])
 
+const SproutIcon = {
+  props: {
+    size: { type: Number, default: 16 },
+  },
+  render() {
+    return h(
+      'svg',
+      {
+        width: this.size,
+        height: this.size,
+        viewBox: '0 0 24 24',
+        xmlns: 'http://www.w3.org/2000/svg',
+        'aria-hidden': 'true',
+      },
+      [
+        h('path', {
+          d: 'M12 22V10',
+          stroke: 'currentColor',
+          'stroke-width': 2,
+          'stroke-linecap': 'round',
+          fill: 'none',
+        }),
+        h('path', {
+          d: 'M12 11C12 6 15 3 20 3C20 8 17 11 12 11Z',
+          fill: 'currentColor',
+        }),
+        h('path', {
+          d: 'M12 16C12 12 9 9 4 9C4 14 7 16 12 16Z',
+          fill: 'currentColor',
+        }),
+      ],
+    )
+  },
+}
+
 const iconMap = {
   layout: LayoutDashboardIcon,
   warehouse: WarehouseIcon,
@@ -206,6 +256,7 @@ const iconMap = {
   link2: CheckCircle2Icon,
   refresh: HistoryIcon,
   leaf: LeafIcon,
+  sprout: SproutIcon,
   sales: BarChart3Icon,
   target: AlertCircleIcon,
   trend: BarChart3Icon,
@@ -221,8 +272,8 @@ const iconMap = {
         <div
           class="mr-2 flex items-center gap-2 max-[980px]:mr-0"
         >
-          <div class="flex h-6 w-6 items-center justify-center bg-white text-xs font-bold text-gray-900">S</div>
-          <span class="text-sm font-black uppercase text-white">StockIt ERP</span>
+          <LeafIcon :size="20" :stroke-width="2.5" class="text-white" />
+          <span class="text-sm font-black text-white">Stockit</span>
         </div>
       </div>
 
@@ -230,6 +281,20 @@ const iconMap = {
         <div
           class="flex items-center gap-1 border-l border-white/20 pl-4 max-[980px]:justify-start max-[980px]:border-l-0 max-[980px]:pl-0"
         >
+          <button
+            v-if="isHq"
+            type="button"
+            class="mr-1 flex items-center gap-1.5 rounded border border-emerald-300/40 bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500/30"
+            title="ESG 대시보드 바로가기"
+            @click="router.push('/hq/esg')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 22V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <path d="M12 11C12 6 15 3 20 3C20 8 17 11 12 11Z" fill="currentColor"/>
+              <path d="M12 16C12 12 9 9 4 9C4 14 7 16 12 16Z" fill="currentColor"/>
+            </svg>
+            <span>ESG 대시보드</span>
+          </button>
           <button type="button" class="p-1.5 text-white/80 transition-colors hover:bg-white/10">
             <BellIcon :size="16" />
           </button>
@@ -237,7 +302,12 @@ const iconMap = {
             <span class="flex h-6 w-6 items-center justify-center bg-white/20 text-[10px] font-bold text-white">
               {{ userInitials }}
             </span>
-            <span class="text-[11px] font-bold text-white/90">{{ userName }}</span>
+            <span class="flex flex-col items-start leading-tight">
+              <span class="text-[11px] font-bold text-white/90">{{ userName }}</span>
+              <span v-if="roleLabel" class="text-[9px] font-medium text-white/60">
+                {{ roleLabel }}<span v-if="storeName"> · {{ storeName }}</span>
+              </span>
+            </span>
           </button>
           <button
             type="button"
@@ -255,10 +325,24 @@ const iconMap = {
       <aside class="sticky top-12 flex h-[calc(100vh-48px)] w-52 shrink-0 flex-col self-start border-r border-gray-300 bg-white max-[980px]:static max-[980px]:h-auto max-[980px]:w-full">
         <div class="border-b border-gray-100 bg-gray-50/50 p-4">
           <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Navigation</p>
-          <p class="text-xs font-black text-gray-800">{{ currentNavigationLabel }}</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-black text-gray-800">{{ currentNavigationLabel }}</p>
+            <button
+              v-if="isHq"
+              type="button"
+              class="shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold transition-colors"
+              :class="treeMode
+                ? 'border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                : 'border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50'"
+              :title="treeMode ? '메뉴 목록으로 돌아가기' : 'ESG 나무 키우기 보기'"
+              @click="toggleTreeMode"
+            >
+              {{ treeMode ? '← 메뉴' : 'ESG 나무' }}
+            </button>
+          </div>
         </div>
 
-        <nav v-if="hasTopMenus" class="min-h-0 flex-1 overflow-y-auto p-2">
+        <nav v-if="!treeMode && hasTopMenus" class="min-h-0 flex-1 overflow-y-auto p-2">
           <div v-for="menu in topMenus" :key="menu.label" class="mt-0.5">
             <button
               type="button"
@@ -302,7 +386,7 @@ const iconMap = {
           </div>
         </nav>
 
-        <nav v-else class="min-h-0 flex-1 overflow-y-auto p-2">
+        <nav v-else-if="!treeMode" class="min-h-0 flex-1 overflow-y-auto p-2">
           <button
             v-for="item in sideMenus"
             :key="item.label"
@@ -320,7 +404,7 @@ const iconMap = {
           </button>
         </nav>
 
-        <EsgTreeWidget v-if="isHq" />
+        <EsgTreeWidget v-if="isHq && treeMode" :expanded="true" />
       </aside>
 
       <main class="min-w-0 flex-1 p-4">
