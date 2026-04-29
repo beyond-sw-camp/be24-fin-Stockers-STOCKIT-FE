@@ -37,12 +37,14 @@ export const useAuthStore = defineStore('auth', () => {
       storeName: found.storeName,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user.value))
+    sessionStorage.removeItem('stockit:openTopMenus')
     return { success: true, redirectTo: roleHomeMap[found.role] }
   }
 
   function logout() {
     user.value = null
     localStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem('stockit:openTopMenus')
   }
 
   init()

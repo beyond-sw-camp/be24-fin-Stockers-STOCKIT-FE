@@ -86,7 +86,7 @@ export const roleMenus = {
     {
       label: 'ESG 대시보드',
       path: '/hq/esg',
-      icon: 'leaf',
+      icon: 'sprout',
       children: [{ label: '친환경 발자국 현황판', path: '/hq/esg' }],
     },
   ],
