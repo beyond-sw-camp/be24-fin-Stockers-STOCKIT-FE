@@ -51,6 +51,7 @@ import HqCircularStockInventoryView from '@/views/hq/circular-stock/HqCircularSt
 import HqCircularStockBuyerManagementView from '@/views/hq/circular-stock/HqCircularStockBuyerManagementView.vue'
 import HqCircularStockSalesRegisterView from '@/views/hq/circular-stock/HqCircularStockSalesRegisterView.vue'
 import HqCircularStockSalesHistoryView from '@/views/hq/circular-stock/HqCircularStockSalesHistoryView.vue'
+import HqCircularStockSalesDetailView from '@/views/hq/circular-stock/HqCircularStockSalesDetailView.vue'
 import HqCircularStockSalesAnalysisView from '@/views/hq/circular-stock/HqCircularStockSalesAnalysisView.vue'
 import HqAiReportView from '@/views/hq/HqAiReportView.vue'
 import EsgDashBoardView from '@/views/hq/esg/EsgDashBoardView.vue'
@@ -149,6 +150,7 @@ const router = createRouter({
     { path: '/hq/circular-inventory/buyers', name: 'hq-circular-inventory-buyers', component: HqCircularStockBuyerManagementView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/circular-inventory/sales/register', name: 'hq-circular-inventory-sales-register', component: HqCircularStockSalesRegisterView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/circular-inventory/sales/history', name: 'hq-circular-inventory-sales-history', component: HqCircularStockSalesHistoryView, meta: { requiresAuth: true, role: 'hq' } },
+    { path: '/hq/circular-inventory/sales/history/:saleId', name: 'hq-circular-inventory-sales-history-detail', component: HqCircularStockSalesDetailView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/circular-inventory/sales/analysis', name: 'hq-circular-inventory-sales-analysis', component: HqCircularStockSalesAnalysisView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/accounts', name: 'hq-accounts', component: AccountListView, meta: { requiresAuth: true, role: 'hq' } },
     { path: '/hq/accounts/approvals', name: 'hq-account-approvals', component: AccountApprovalView, meta: { requiresAuth: true, role: 'hq' } },

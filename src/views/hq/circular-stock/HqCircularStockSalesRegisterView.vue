@@ -194,6 +194,10 @@ function submitSale() {
     buyerSearchTerm.value = ''
     isDrawerOpen.value = false
     showFinalReviewModal.value = false
+    router.push({
+      name: 'hq-circular-inventory-sales-history-detail',
+      params: { saleId: result.sale.saleId },
+    })
   }
 }
 

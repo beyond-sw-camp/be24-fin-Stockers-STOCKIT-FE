@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useCircularStockBuyerStore } from '@/stores/circularStockBuyers.js'
+import { useEsgStore } from '@/stores/esg.js'
 
 const INVENTORY_STORAGE_KEY = 'stockit_circular_inventory_inventory_v2'
 const SALES_STORAGE_KEY = 'stockit_circular_inventory_sales_v1'
@@ -320,8 +321,205 @@ function buyerMaterialFitValue(materialType) {
   return 'blended'
 }
 
+const CARBON_REDUCTION_FACTORS = {
+  면: 6.5,
+  폴리에스터: 6.8,
+  나일론: 5.5,
+  데님: 6.5,
+  울: 20.0,
+  default: 6.0,
+}
+
+const RESOURCE_CIRCULATION_FACTORS = {
+  면: 1.8,
+  울: 2.5,
+  캐시미어: 2.8,
+  실크: 2.4,
+  리넨: 1.6,
+  폴리에스터: 2.3,
+  나일론: 2.1,
+  아크릴: 2.0,
+  스판덱스: 1.7,
+  데님: 1.9,
+  default: 1.9,
+}
+
+const EXECUTION_BASE_POINTS = 120
+const CARBON_POINT_MULTIPLIER = 1
+const TRACEABILITY_POINT_RULES = [
+  { key: 'materialClassified', label: '소재 분류 완료', points: 25 },
+  { key: 'buyerClassified', label: '거래처 유형 확정', points: 25 },
+  { key: 'treatmentResolved', label: '처리 목적 확정', points: 20 },
+  { key: 'carbonEvidenceStored', label: '탄소 계산 근거 저장', points: 15 },
+  { key: 'snapshotStored', label: '판매 스냅샷 저장 완료', points: 15 },
+]
+
+const INDUSTRY_TREATMENT_TYPE_MAP = {
+  재생원사: '재활용',
+  '화학 사출': '재활용',
+  '가구 자재': '재활용',
+  '물류 자재': '재활용',
+  '물류 패키징': '재활용',
+  '패션 잡화': '업사이클링',
+  홈텍스타일: '업사이클링',
+  '반려동물 용품': '업사이클링',
+  '교육/공예': '업사이클링',
+  인테리어: '업사이클링',
+  유니폼: '중고 재판매',
+  '단체복/워크웨어': '중고 재판매',
+  '의류/워크웨어': '중고 재판매',
+  '건설 자재': '다운사이클링',
+  '자동차 흡음': '다운사이클링',
+  '산업 소모품': '다운사이클링',
+  에너지: '다운사이클링',
+}
+
+function getMaterialFactor(map, materialName) {
+  const normalizedName = normalizeMaterialName(materialName)
+  return map[normalizedName] ?? map.default
+}
+
+function resolveTreatmentTypeFromBuyer(buyer = {}) {
+  const exactMatch = INDUSTRY_TREATMENT_TYPE_MAP[buyer?.industryGroup]
+  if (exactMatch) return exactMatch
+
+  const joinedProductTypes = Array.isArray(buyer?.productTypes)
+    ? buyer.productTypes.join(' ')
+    : String(buyer?.productNote ?? '')
+
+  if (/유니폼|워크웨어|조끼|단체복/.test(joinedProductTypes)) return '중고 재판매'
+  if (/가방|파우치|쿠션|커버|텍스타일|잡화|공예/.test(joinedProductTypes)) return '업사이클링'
+  if (/흡음|단열|완충|패널|소모품/.test(joinedProductTypes)) return '다운사이클링'
+  if (/재생|원사|방적|사출|원재료|패키징/.test(joinedProductTypes)) return '재활용'
+
+  return '재활용'
+}
+
+function buildSaleEsgSnapshot(sale, buyer, kauPrice, options = {}) {
+  const items = Array.isArray(sale?.items) ? sale.items.map(normalizeSaleItem) : []
+  const treatmentType = resolveTreatmentTypeFromBuyer(buyer)
+  const materialBreakdownMap = new Map()
+  let savedCarbonKg = 0
+  let resourceCirculationPointsRaw = 0
+
+  for (const item of items) {
+    const actualWeightKg = Number(item.actualWeightKg) || 0
+    const materials = Array.isArray(item.materials) && item.materials.length > 0
+      ? item.materials
+      : [{ name: '기타', ratio: 100 }]
+
+    const totalRatio = materials.reduce((sum, material) => sum + (Number(material.ratio) || 0), 0) || 100
+
+    for (const material of materials) {
+      const normalizedName = normalizeMaterialName(material.name)
+      const appliedWeightRatio = (Number(material.ratio) || 0) / totalRatio
+      const weightKg = roundTo(actualWeightKg * appliedWeightRatio, 4)
+      const carbonReductionFactor = getMaterialFactor(CARBON_REDUCTION_FACTORS, normalizedName)
+      const resourceCirculationFactor = getMaterialFactor(RESOURCE_CIRCULATION_FACTORS, normalizedName)
+
+      savedCarbonKg += weightKg * carbonReductionFactor
+      resourceCirculationPointsRaw += weightKg * resourceCirculationFactor
+
+      const existing = materialBreakdownMap.get(normalizedName) ?? {
+        materialName: normalizedName,
+        weightKg: 0,
+        carbonReductionFactor,
+        resourceCirculationFactor,
+        appliedWeightRatio: 0,
+      }
+
+      existing.weightKg += weightKg
+      existing.appliedWeightRatio += appliedWeightRatio
+      materialBreakdownMap.set(normalizedName, existing)
+    }
+  }
+
+  const normalizedBreakdown = [...materialBreakdownMap.values()].map(entry => ({
+    ...entry,
+    weightKg: roundTo(entry.weightKg, 4),
+    appliedWeightRatio: roundTo(entry.appliedWeightRatio, 4),
+  }))
+
+  const roundedSavedCarbonKg = roundTo(savedCarbonKg, 2)
+  const resourceCirculationPoints = roundTo(resourceCirculationPointsRaw, 0)
+  const carbonContributionPoints = roundTo(roundedSavedCarbonKg * CARBON_POINT_MULTIPLIER, 0)
+  const carbonCreditValue = roundTo((roundedSavedCarbonKg / 1000) * (Number(kauPrice) || 0), 0)
+  const salesRevenue = Number(sale?.totalActualAmount)
+    || items.reduce((sum, item) => sum + (Number(item.actualAmount) || 0), 0)
+  const wasteLossRecoveredValue = roundTo(salesRevenue, 0)
+  const tradableCarbonCreditValue = carbonCreditValue
+
+  const traceabilityChecks = {
+    materialClassified: items.every(item =>
+      Boolean(item.materialType)
+      && Array.isArray(item.materials)
+      && item.materials.length > 0
+      && item.materials.every(material => Boolean(material.name) && Number(material.ratio) > 0),
+    ),
+    buyerClassified: Boolean(buyer?.industryGroup || buyer?.primaryMaterialFit),
+    treatmentResolved: Boolean(treatmentType),
+    carbonEvidenceStored: normalizedBreakdown.length > 0,
+    snapshotStored: Boolean(sale?.saleId || options.isEstimated),
+  }
+
+  const traceabilityBreakdown = TRACEABILITY_POINT_RULES.map(rule => ({
+    scoreType: rule.key,
+    label: rule.label,
+    points: traceabilityChecks[rule.key] ? rule.points : 0,
+    formulaSummary: traceabilityChecks[rule.key] ? `${rule.label} 충족` : `${rule.label} 미충족`,
+  }))
+
+  const scoreBreakdown = [
+    {
+      scoreType: 'execution',
+      label: '순환 판매 실행 점수',
+      points: items.length > 0 ? EXECUTION_BASE_POINTS : 0,
+      formulaSummary: `판매 1건 최종 등록 완료 시 기본 ${EXECUTION_BASE_POINTS}pt`,
+    },
+    {
+      scoreType: 'resourceCirculation',
+      label: '자원 순환 전환 점수',
+      points: resourceCirculationPoints,
+      formulaSummary: '실제 판매 무게 × 소재별 순환 전환 계수',
+    },
+    {
+      scoreType: 'carbonContribution',
+      label: '탄소 절감 기여 점수',
+      points: carbonContributionPoints,
+      formulaSummary: `실제 탄소 감축량 ${roundedSavedCarbonKg.toFixed(2)}kgCO₂ × ${CARBON_POINT_MULTIPLIER}`,
+    },
+    {
+      scoreType: 'traceability',
+      label: '인증/추적 완료 점수',
+      points: traceabilityBreakdown.reduce((sum, item) => sum + item.points, 0),
+      formulaSummary: `${traceabilityBreakdown.filter(item => item.points > 0).length}/${traceabilityBreakdown.length} 항목 충족`,
+    },
+  ]
+
+  return {
+    scoreBreakdown,
+    kpiSnapshot: {
+      savedCarbonKg: roundedSavedCarbonKg,
+      carbonCreditValue,
+      tradableCarbonCreditValue,
+      salesRevenue: roundTo(salesRevenue, 0),
+      wasteLossRecoveredValue,
+    },
+    esgMeta: {
+      treeGrowPoints: scoreBreakdown.reduce((sum, item) => sum + item.points, 0),
+      treatmentType,
+      kauPriceAtSale: Number(kauPrice) || 0,
+      formulaSummary: '나무 키우기 점수 = 순환 판매 실행 + 자원 순환 전환 + 탄소 절감 기여 + 인증/추적 완료',
+      materialBreakdown: normalizedBreakdown,
+      traceabilityBreakdown,
+    },
+    isEstimated: Boolean(options.isEstimated),
+  }
+}
+
 export const useCircularStockStore = defineStore('circularStock', () => {
   const buyerStore = useCircularStockBuyerStore()
+  const esgStore = useEsgStore()
   const inventoryItems = ref(loadJson(INVENTORY_STORAGE_KEY, INITIAL_INVENTORY).map(enrichInventoryItem))
   const sales = ref(loadJson(SALES_STORAGE_KEY, INITIAL_SALES).map(normalizeSaleRecord))
   const draftBuyerId = ref('')
@@ -439,6 +637,29 @@ export const useCircularStockStore = defineStore('circularStock', () => {
 
   function getSaleById(saleId) {
     return sales.value.find(sale => sale.saleId === saleId) ?? null
+  }
+
+  function getSaleEsgSnapshot(saleInput) {
+    const saleRecord = typeof saleInput === 'string' ? getSaleById(saleInput) : saleInput
+    if (!saleRecord) return null
+
+    if (Array.isArray(saleRecord.scoreBreakdown) && saleRecord.kpiSnapshot && saleRecord.esgMeta) {
+      return {
+        scoreBreakdown: saleRecord.scoreBreakdown,
+        kpiSnapshot: saleRecord.kpiSnapshot,
+        esgMeta: saleRecord.esgMeta,
+        isEstimated: false,
+      }
+    }
+
+    const buyer = buyerStore.getBuyerById(saleRecord.buyerId) ?? {
+      industryGroup: saleRecord.buyerIndustryGroup,
+      productTypes: saleRecord.buyerProductTypes,
+      productNote: saleRecord.buyerProductNote,
+      primaryMaterialFit: saleRecord.buyerPrimaryMaterialFit,
+    }
+
+    return buildSaleEsgSnapshot(saleRecord, buyer, esgStore.kauPrice, { isEstimated: true })
   }
 
   function getDraftItem(draftId) {
@@ -652,6 +873,7 @@ export const useCircularStockStore = defineStore('circularStock', () => {
       skuCode: item.skuCode,
       color: item.color,
       size: item.size,
+      materialType: item.materialType,
       inventoryId: item.inventoryId,
       itemCode: item.itemCode,
       itemName: item.itemName,
@@ -672,6 +894,15 @@ export const useCircularStockStore = defineStore('circularStock', () => {
       lineAmount: item.requestedAmount,
     }))
 
+    const esgSnapshot = buildSaleEsgSnapshot(
+      {
+        totalActualAmount: saleItems.reduce((sum, item) => sum + item.actualAmount, 0),
+        items: saleItems,
+      },
+      buyer,
+      esgStore.kauPrice,
+    )
+
     for (const item of saleItems) {
       const inventory = getInventoryById(item.inventoryId)
       inventory.quantity -= item.deductedQuantity
@@ -686,6 +917,9 @@ export const useCircularStockStore = defineStore('circularStock', () => {
       buyerId: buyer.id,
       buyerName: buyer.companyName,
       buyerCode: buyer.code,
+      buyerIndustryGroup: buyer.industryGroup,
+      buyerProductTypes: buyer.productTypes,
+      buyerProductNote: buyer.productNote,
       buyerManagerName: buyer.managerName,
       buyerPhone: buyer.phone,
       buyerDescription: buyer.description,
@@ -703,6 +937,7 @@ export const useCircularStockStore = defineStore('circularStock', () => {
       totalAmount: saleItems.reduce((sum, item) => sum + item.actualAmount, 0),
       memo: draftMemo.value.trim(),
       items: saleItems,
+      ...esgSnapshot,
     }
 
     sales.value = [normalizeSaleRecord(sale), ...sales.value]
@@ -728,6 +963,7 @@ export const useCircularStockStore = defineStore('circularStock', () => {
     filteredBuyers,
     getInventoryById,
     getSaleById,
+    getSaleEsgSnapshot,
     getDraftItem,
     selectBuyer,
     setDraftMemo,
