@@ -70,13 +70,18 @@ spec:
         container('node') {
           script {
             def branchName = env.BRANCH_NAME ?: ''
+            def gitBranch = env.GIT_BRANCH ?: ''
+            def gitLocalBranch = env.GIT_LOCAL_BRANCH ?: ''
+            def normalizedBranchCandidates = [branchName, gitBranch, gitLocalBranch]
+              .findAll { it?.trim() }
+              .collect { it.trim().replaceFirst(/^origin\//, '').replaceFirst(/^refs\/heads\//, '') }
             def isPrBuild = !!(env.CHANGE_ID?.trim())
-            def isMainBranch = (branchName == 'main')
+            def isMainBranch = normalizedBranchCandidates.any { it == 'main' }
             def shouldDeploy = isMainBranch && !isPrBuild
             def deployReason = ''
 
             if (!isMainBranch) {
-              deployReason = "branch-mismatch:${branchName}"
+              deployReason = "branch-mismatch:BRANCH_NAME=${branchName},GIT_BRANCH=${gitBranch},GIT_LOCAL_BRANCH=${gitLocalBranch}"
             } else if (isPrBuild) {
               deployReason = "pr-build:CHANGE_ID=${env.CHANGE_ID},TARGET=${env.CHANGE_TARGET ?: 'unknown'}"
             } else {
