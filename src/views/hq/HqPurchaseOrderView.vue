@@ -558,15 +558,26 @@ const TruckIcon = IconBase([
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr v-for="item in poStore.selectedOrder.items" :key="item.id">
-                    <td class="px-2 py-2 font-bold text-gray-800">{{ item.productName }}</td>
-                    <td class="px-2 py-2 text-right font-bold text-gray-700">
+                  <tr v-for="item in poStore.selectedOrder.items" :key="item.skuCode || item.productId">
+                    <td class="px-2 py-2 align-top">
+                      <div class="font-bold text-gray-800">{{ item.productName }}</div>
+                      <div v-if="item.optionValue" class="mt-0.5 text-[11px] font-bold text-[#004D3C]">
+                        {{ item.optionValue }}
+                        <span v-if="item.optionName" class="ml-1 font-normal text-gray-400">
+                          ({{ item.optionName }})
+                        </span>
+                      </div>
+                      <div v-if="item.skuCode" class="text-[10px] text-gray-400">
+                        {{ item.skuCode }}
+                      </div>
+                    </td>
+                    <td class="px-2 py-2 text-right font-bold text-gray-700 align-top">
                       {{ item.quantity }}
                     </td>
-                    <td class="px-2 py-2 text-right text-gray-500">
+                    <td class="px-2 py-2 text-right text-gray-500 align-top">
                       ₩{{ item.unitPrice.toLocaleString() }}
                     </td>
-                    <td class="px-2 py-2 text-right font-bold text-gray-700">
+                    <td class="px-2 py-2 text-right font-bold text-gray-700 align-top">
                       ₩{{ item.subtotal.toLocaleString() }}
                     </td>
                   </tr>
