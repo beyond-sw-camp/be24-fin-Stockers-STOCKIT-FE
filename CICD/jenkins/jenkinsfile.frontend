@@ -69,6 +69,10 @@ spec:
       steps {
         container('node') {
           script {
+            // Different pod containers/users can trigger git "dubious ownership".
+            // Mark workspace as safe so optional git metadata reads do not fail the build.
+            sh "git config --global --add safe.directory '${WORKSPACE}' || true"
+
             def branchName = env.BRANCH_NAME ?: ''
             def gitBranch = env.GIT_BRANCH ?: ''
             def gitLocalBranch = env.GIT_LOCAL_BRANCH ?: ''
@@ -86,11 +90,11 @@ spec:
               deployReason = "pr-build:CHANGE_ID=${env.CHANGE_ID},TARGET=${env.CHANGE_TARGET ?: 'unknown'}"
             } else {
               def parentCount = sh(
-                script: "git rev-list --parents -n 1 HEAD | awk '{print NF-1}'",
+                script: "git rev-list --parents -n 1 HEAD | awk '{print NF-1}' || echo unknown",
                 returnStdout: true
               ).trim()
               def lastSubject = sh(
-                script: "git log -1 --pretty=%s",
+                script: "git log -1 --pretty=%s || echo unknown",
                 returnStdout: true
               ).trim()
               def mergeKeywords = ['Merge pull request', 'merge pull request', '(#']
