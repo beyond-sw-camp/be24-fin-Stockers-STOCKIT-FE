@@ -161,12 +161,20 @@ const skuInventoryData = computed(() => {
 
   return normalizedInventoryData.value.flatMap((item) => {
     const totalWeight = parseWeight(item.weight)
-    const perUnitWeight = item.quantity > 0 ? totalWeight / item.quantity : 0
+    const sourceQuantity = Math.max(1, Number(item.quantity) || 1)
+    const perUnitWeight = totalWeight / sourceQuantity
+    // 재고 총량이 너무 작아 전 SKU가 저수량으로 보이는 것을 방지하되,
+    // SKU별 분산은 유지해 일부는 10~20대 수량도 나오도록 한다.
+    const boostedTotalQuantity = Math.max(
+      sourceQuantity,
+      760 + (String(item.id).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 520),
+    )
 
     return colorOptions.flatMap((color, colorIndex) =>
       sizeOptions.map((size, sizeIndex) => {
         const partitionIndex = colorIndex * sizeOptions.length + sizeIndex
-        const quantity = Math.max(1, Math.round(item.quantity * partitionRatios[partitionIndex]))
+        const variance = 0.8 + ((colorIndex * 13 + sizeIndex * 7 + String(item.id).length) % 6) * 0.1
+        const quantity = Math.max(6, Math.round(boostedTotalQuantity * partitionRatios[partitionIndex] * variance))
         const skuWeight = quantity * perUnitWeight
 
         return {
