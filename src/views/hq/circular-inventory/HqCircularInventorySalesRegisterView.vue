@@ -386,7 +386,7 @@ onBeforeUnmount(() => {
                   </tbody>
                 </table>
               </div>
-              <div class="mt-3 flex justify-end">
+              <div class="mt-4 border-t border-gray-100 pt-2 flex justify-end">
                 <button type="button" class="h-9 border border-[#004D3C] bg-[#004D3C] px-4 text-xs font-black text-white disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400" :disabled="!canMoveStep2" @click="moveStep(2)">다음</button>
               </div>
             </div>
@@ -474,9 +474,12 @@ onBeforeUnmount(() => {
 
             <div v-else class="mt-4 grid w-full gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)]">
               <div class="min-w-0">
-                <div class="mb-3">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <div>
                   <p class="text-sm font-black text-gray-900">판매 조건 입력</p>
                   <p class="mt-1 text-[11px] font-bold text-gray-400">kg당 단가는 자동 입력되며 수정 가능합니다.</p>
+                  </div>
+                  <button type="button" class="text-[11px] font-black text-gray-500 hover:text-gray-900" @click="clearDraftPanel">전체 비우기</button>
                 </div>
                 <div class="max-h-[22rem] overflow-y-auto border border-gray-200">
                   <table class="min-w-[980px] w-full border-collapse text-left text-xs">
@@ -490,6 +493,7 @@ onBeforeUnmount(() => {
                         <th class="px-3 py-3 text-center font-black">실차감 수량</th>
                         <th class="px-3 py-3 text-center font-black">kg당 단가</th>
                         <th class="px-3 py-3 text-center font-black">금액</th>
+                        <th class="px-3 py-3 text-center font-black">삭제</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -535,12 +539,21 @@ onBeforeUnmount(() => {
                           <p class="mt-1 text-center text-[10px] font-bold text-gray-400">기본 {{ Number(item.defaultKgUnitPrice || 0).toLocaleString() }}</p>
                         </td>
                         <td class="px-3 py-3 align-top text-center font-black text-gray-900">₩{{ item.lineAmount.toLocaleString() }}</td>
+                        <td class="px-3 py-3 align-top text-center">
+                          <button
+                            type="button"
+                            class="h-7 border border-gray-200 px-2 text-[11px] font-black text-gray-500 hover:bg-gray-50 hover:text-black"
+                            @click="removeDraftItem(item.draftId)"
+                          >
+                            삭제
+                          </button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div class="flex w-full min-w-0 flex-col gap-4">
+              <div class="flex w-full min-w-0 flex-col gap-3">
                 <section class="w-full border border-gray-200 bg-gray-50 px-3 py-3">
                   <p class="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">판매 메모</p>
                   <textarea :value="circularInventoryStore.draftMemo" rows="5" maxlength="500" class="mt-2 w-full resize-none border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-900 outline-none focus:border-[#004D3C]" placeholder="거래 조건, 출고 메모 등을 입력하세요." @input="circularInventoryStore.setDraftMemo($event.target.value)" />
@@ -550,8 +563,17 @@ onBeforeUnmount(() => {
                   <div class="flex items-center justify-between text-xs"><span class="font-bold text-gray-500">소재 구분</span><span class="font-black text-gray-900">{{ lockedMaterialType || '-' }}</span></div>
                   <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">거래처</span><span class="font-black text-gray-900">{{ selectedBuyer?.companyName ?? '-' }}</span></div>
                   <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">담긴 SKU</span><span class="font-black text-gray-900">{{ drawerSummary.totalItems }}건</span></div>
-                  <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">총 판매 kg</span><span class="font-black text-gray-900">{{ drawerSummary.totalWeightKg.toFixed(2) }}kg</span></div>
-                  <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">총 금액</span><span class="font-black text-gray-900">₩{{ drawerSummary.totalAmount.toLocaleString() }}</span></div>
+                  <div class="mt-3 flex items-start justify-between gap-3 text-xs">
+                    <span class="font-bold text-gray-500">포함 소재</span>
+                    <span class="text-right font-black text-gray-900">
+                      {{
+                        [...new Set(draftItems.flatMap(item => item.materials.map(material => material.name)))]
+                          .join(', ') || '-'
+                      }}
+                    </span>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">요청 KG</span><span class="font-black text-gray-900">{{ drawerSummary.totalWeightKg.toFixed(2) }}kg</span></div>
+                  <div class="mt-3 flex items-center justify-between text-xs"><span class="font-bold text-gray-500">예상 금액</span><span class="font-black text-gray-900">₩{{ drawerSummary.totalAmount.toLocaleString() }}</span></div>
                 </section>
 
                 <button type="button" class="h-9 w-full border border-gray-300 bg-white text-xs font-black text-gray-700 hover:bg-gray-50" @click="moveStep(2)">이전</button>
