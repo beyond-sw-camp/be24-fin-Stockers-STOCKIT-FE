@@ -1,10 +1,35 @@
 <script setup>
-import { h, computed } from 'vue'
+import { h, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import EsgTreeWidget from '@/components/common/EsgTreeWidget.vue'
+
+const openTopMenusStorageKey = 'stockit:openTopMenus'
+
+const readStoredOpenTopMenus = () => {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const stored = window.sessionStorage.getItem(openTopMenusStorageKey)
+    const parsed = stored ? JSON.parse(stored) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const sharedOpenTopMenus = ref(readStoredOpenTopMenus())
+
+const saveOpenTopMenus = (menus) => {
+  sharedOpenTopMenus.value = menus
+
+  if (typeof window === 'undefined') return
+
+  window.sessionStorage.setItem(openTopMenusStorageKey, JSON.stringify(menus))
+}
 
 const props = defineProps({
-  activeTopMenu: { type: String, required: true },
+  activeTopMenu: { type: String, default: '' },
   topMenus: { type: Array, default: () => [] },
   sideMenus: { type: Array, required: true },
   activeSideMenu: { type: String, required: true },
@@ -17,6 +42,19 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const userName = computed(() => auth.user?.name ?? '사용자')
+const isHq = computed(() => auth.user?.role === 'hq')
+const roleLabel = computed(() => {
+  switch (auth.user?.role) {
+    case 'hq': return '본사 관리자'
+    case 'store': return '매장 관리자'
+    case 'warehouse': return '물류창고 관리자'
+    default: return ''
+  }
+})
+const storeName = computed(() => {
+  if (auth.user?.role === 'hq') return ''
+  return auth.user?.storeName ?? ''
+})
 const userInitials = computed(() => {
   const name = auth.user?.name ?? ''
   return name.slice(-2).toUpperCase() || 'US'
@@ -25,12 +63,43 @@ const userInitials = computed(() => {
 const brandColor = '#004D3C'
 const brandColorLight = '#E6F2F0'
 
-const topMenus = computed(() => props.topMenus?.length ? props.topMenus : props.sideMenus)
+const hasTopMenus = computed(() => Boolean(props.topMenus?.length))
+const topMenus = computed(() => props.topMenus ?? [])
+const currentNavigationLabel = computed(() => props.activeTopMenu || 'Navigation')
+const openTopMenus = sharedOpenTopMenus
+
+const treeMode = ref(false)
+const toggleTreeMode = () => { treeMode.value = !treeMode.value }
 
 const handleTopMenuClick = (menu) => {
-  const item = topMenus.value.find(m => m.label === menu.label)
-  if (item) router.push(item.path)
+  const isOpen = openTopMenus.value.includes(menu.label)
+  saveOpenTopMenus(isOpen
+    ? openTopMenus.value.filter(label => label !== menu.label)
+    : [...openTopMenus.value, menu.label])
 }
+
+const keepParentMenuOpen = (parentMenu) => {
+  if (!parentMenu || openTopMenus.value.includes(parentMenu.label)) return
+  saveOpenTopMenus([...openTopMenus.value, parentMenu.label])
+}
+
+const handleSideMenuClick = (item, parentMenu = null) => {
+  keepParentMenuOpen(parentMenu)
+
+  if (item.path) {
+    router.push(item.path)
+    return
+  }
+
+  if (parentMenu && parentMenu.label !== props.activeTopMenu && parentMenu.path) {
+    router.push(parentMenu.path)
+    return
+  }
+
+  emit('update:activeSideMenu', item.label)
+}
+
+const getMenuChildren = (menu) => menu.children?.length ? menu.children : props.sideMenus
 
 const IconBase = (paths) => ({
   props: {
@@ -129,6 +198,46 @@ const HistoryIcon = IconBase([
   { tag: 'path', attrs: { d: 'M12 7v5l3 2' } },
 ])
 
+const LeafIcon = IconBase([
+  { tag: 'path', attrs: { d: 'M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 8-4 16-9 16Z' } },
+  { tag: 'path', attrs: { d: 'M2 22c5-2 9-6 12-12' } },
+])
+
+const SproutIcon = {
+  props: {
+    size: { type: Number, default: 16 },
+  },
+  render() {
+    return h(
+      'svg',
+      {
+        width: this.size,
+        height: this.size,
+        viewBox: '0 0 24 24',
+        xmlns: 'http://www.w3.org/2000/svg',
+        'aria-hidden': 'true',
+      },
+      [
+        h('path', {
+          d: 'M12 22V10',
+          stroke: 'currentColor',
+          'stroke-width': 2,
+          'stroke-linecap': 'round',
+          fill: 'none',
+        }),
+        h('path', {
+          d: 'M12 11C12 6 15 3 20 3C20 8 17 11 12 11Z',
+          fill: 'currentColor',
+        }),
+        h('path', {
+          d: 'M12 16C12 12 9 9 4 9C4 14 7 16 12 16Z',
+          fill: 'currentColor',
+        }),
+      ],
+    )
+  },
+}
+
 const iconMap = {
   layout: LayoutDashboardIcon,
   warehouse: WarehouseIcon,
@@ -146,6 +255,8 @@ const iconMap = {
   briefcase: StoreIcon,
   link2: CheckCircle2Icon,
   refresh: HistoryIcon,
+  leaf: LeafIcon,
+  sprout: SproutIcon,
   sales: BarChart3Icon,
   target: AlertCircleIcon,
   trend: BarChart3Icon,
@@ -159,34 +270,31 @@ const iconMap = {
     >
       <div class="flex items-center gap-4 max-[980px]:flex-col max-[980px]:items-stretch">
         <div
-          class="mr-2 flex items-center gap-2 border-r border-white/20 pr-6 max-[980px]:mr-0 max-[980px]:border-r-0 max-[980px]:pr-0"
+          class="mr-2 flex items-center gap-2 max-[980px]:mr-0"
         >
-          <div class="flex h-6 w-6 items-center justify-center bg-white text-xs font-bold text-gray-900">S</div>
-          <span class="text-sm font-black uppercase text-white">StockIt ERP</span>
+          <LeafIcon :size="20" :stroke-width="2.5" class="text-white" />
+          <span class="text-sm font-black text-white">Stockit</span>
         </div>
-
-        <nav class="flex flex-wrap items-center gap-1">
-          <button
-            v-for="menu in topMenus"
-            :key="menu.label"
-            type="button"
-            class="h-12 border-b-2 px-4 text-xs font-bold transition-colors hover:bg-white/10"
-            :class="
-              activeTopMenu === menu.label
-                ? 'border-white bg-white/10 text-white'
-                : 'border-transparent text-white/60'
-            "
-            @click="handleTopMenuClick(menu)"
-          >
-            {{ menu.label }}
-          </button>
-        </nav>
       </div>
 
       <div class="flex items-center gap-4 max-[980px]:flex-col max-[980px]:items-stretch">
         <div
           class="flex items-center gap-1 border-l border-white/20 pl-4 max-[980px]:justify-start max-[980px]:border-l-0 max-[980px]:pl-0"
         >
+          <button
+            v-if="isHq"
+            type="button"
+            class="mr-1 flex items-center gap-1.5 rounded border border-emerald-300/40 bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500/30"
+            title="ESG 대시보드 바로가기"
+            @click="router.push('/hq/esg')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 22V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <path d="M12 11C12 6 15 3 20 3C20 8 17 11 12 11Z" fill="currentColor"/>
+              <path d="M12 16C12 12 9 9 4 9C4 14 7 16 12 16Z" fill="currentColor"/>
+            </svg>
+            <span>ESG 대시보드</span>
+          </button>
           <button type="button" class="p-1.5 text-white/80 transition-colors hover:bg-white/10">
             <BellIcon :size="16" />
           </button>
@@ -194,7 +302,12 @@ const iconMap = {
             <span class="flex h-6 w-6 items-center justify-center bg-white/20 text-[10px] font-bold text-white">
               {{ userInitials }}
             </span>
-            <span class="text-[11px] font-bold text-white/90">{{ userName }}</span>
+            <span class="flex flex-col items-start leading-tight">
+              <span class="text-[11px] font-bold text-white/90">{{ userName }}</span>
+              <span v-if="roleLabel" class="text-[9px] font-medium text-white/60">
+                {{ roleLabel }}<span v-if="storeName"> · {{ storeName }}</span>
+              </span>
+            </span>
           </button>
           <button
             type="button"
@@ -209,30 +322,89 @@ const iconMap = {
     </header>
 
     <div class="flex min-h-[calc(100vh-48px)] max-[980px]:flex-col">
-      <aside class="flex w-52 shrink-0 flex-col border-r border-gray-300 bg-white max-[980px]:w-full">
+      <aside class="sticky top-12 flex h-[calc(100vh-48px)] w-52 shrink-0 flex-col self-start border-r border-gray-300 bg-white max-[980px]:static max-[980px]:h-auto max-[980px]:w-full">
         <div class="border-b border-gray-100 bg-gray-50/50 p-4">
           <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Navigation</p>
-          <p class="text-xs font-black text-gray-800">{{ activeTopMenu }}</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-black text-gray-800">{{ currentNavigationLabel }}</p>
+            <button
+              v-if="isHq"
+              type="button"
+              class="shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold transition-colors"
+              :class="treeMode
+                ? 'border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                : 'border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50'"
+              :title="treeMode ? '메뉴 목록으로 돌아가기' : 'ESG 나무 키우기 보기'"
+              @click="toggleTreeMode"
+            >
+              {{ treeMode ? '← 메뉴' : 'ESG 나무' }}
+            </button>
+          </div>
         </div>
 
-        <nav class="p-2">
+        <nav v-if="!treeMode && hasTopMenus" class="min-h-0 flex-1 overflow-y-auto p-2">
+          <div v-for="menu in topMenus" :key="menu.label" class="mt-0.5">
+            <button
+              type="button"
+              class="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-xs transition-colors"
+              :class="
+                activeTopMenu === menu.label
+                  ? 'bg-[#EBF5F5] font-bold text-black'
+                  : 'font-semibold text-black hover:bg-[#EBF5F5]'
+              "
+              @click="handleTopMenuClick(menu)"
+            >
+              <component :is="iconMap[menu.icon] ?? FileTextIcon" :size="14" />
+              <span class="min-w-0 flex-1">{{ menu.label }}</span>
+              <span
+                class="text-[10px] text-black/60 transition-transform"
+                :class="openTopMenus.includes(menu.label) ? 'rotate-90' : ''"
+                aria-hidden="true"
+              >
+                ›
+              </span>
+            </button>
+
+            <div v-if="openTopMenus.includes(menu.label)" class="relative ml-5 mt-1 py-1 pl-5 pr-1">
+              <span class="absolute bottom-3 left-2 top-3 w-px bg-[#D6EAEA]" aria-hidden="true"></span>
+              <button
+                v-for="item in getMenuChildren(menu)"
+                :key="item.label"
+                type="button"
+                class="relative mt-0.5 flex w-full items-center rounded-md px-3 py-2 text-left text-[11px] transition-colors"
+                :class="
+                  activeTopMenu === menu.label && activeSideMenu === item.label
+                    ? 'bg-[#EBF5F5] font-semibold text-black'
+                    : 'text-black hover:bg-[#EBF5F5]'
+                "
+                @click="handleSideMenuClick(item, menu)"
+              >
+                <span class="absolute -left-3 top-1/2 h-px w-3 bg-[#D6EAEA]" aria-hidden="true"></span>
+                <span>{{ item.label }}</span>
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        <nav v-else-if="!treeMode" class="min-h-0 flex-1 overflow-y-auto p-2">
           <button
             v-for="item in sideMenus"
             :key="item.label"
             type="button"
-            class="mt-0.5 flex w-full items-center gap-2.5 border px-3 py-2.5 text-left text-xs transition-colors"
+            class="mt-0.5 flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-xs transition-colors"
             :class="
               activeSideMenu === item.label
-                ? 'border-[#004D3C] bg-[#E6F2F0] font-bold text-[#004D3C]'
-                : 'border-transparent text-gray-600 hover:bg-gray-50'
+                ? 'bg-[#EBF5F5] font-bold text-black'
+                : 'font-semibold text-black hover:bg-[#EBF5F5]'
             "
-            @click="item.path ? router.push(item.path) : emit('update:activeSideMenu', item.label)"
+            @click="handleSideMenuClick(item)"
           >
             <component :is="iconMap[item.icon] ?? FileTextIcon" :size="14" />
             <span>{{ item.label }}</span>
           </button>
         </nav>
 
+        <EsgTreeWidget v-if="isHq && treeMode" :expanded="true" />
       </aside>
 
       <main class="min-w-0 flex-1 p-4">

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Store, Warehouse } from 'lucide-vue-next'
+import { Building2, Eye, EyeOff, Leaf, LockKeyhole, Mail, ShieldCheck, Store, Warehouse } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
@@ -74,14 +74,10 @@ async function handleSubmit() {
       <div
         class="flex min-h-[340px] flex-col justify-between gap-8 bg-[#004D3C] p-6 text-white sm:p-8 md:min-h-[620px] md:p-11"
       >
-        <div class="flex items-start gap-4">
-          <div
-            class="flex h-11 w-11 shrink-0 items-center justify-center border border-white/40 bg-white text-[22px] font-black text-[#004D3C]"
-          >
-            S
-          </div>
+        <div class="flex items-start gap-3">
+          <Leaf :size="40" :stroke-width="2.5" class="shrink-0 text-white" />
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">StockIT ERP</p>
+            <p class="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">Stockit</p>
             <h1 class="mt-3 max-w-[420px] text-[30px] font-black leading-[1.16] text-white md:text-[40px]">
               재고 운영을 한 화면에서 관리하세요.
             </h1>
