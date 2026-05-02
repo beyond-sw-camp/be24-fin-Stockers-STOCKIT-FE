@@ -20,6 +20,12 @@ const STATUS_TABS = [
   { key: 'IN_TRANSIT', label: '배송중' },
   { key: 'COMPLETED', label: '완료' },
 ]
+const TYPE_OPTIONS = [
+  { value: '전체', label: '전체 유형' },
+  { value: 'STORE_OUTBOUND', label: '매장 출고' },
+  { value: 'WH_TRANSFER', label: '창고간 이동' },
+  { value: 'CIRCULAR_SALE', label: '순환재고 판매' },
+]
 const PERIOD_TABS = [
   { key: 'ALL', label: '전체' },
   { key: 'DAY', label: '일' },
@@ -100,46 +106,66 @@ applyPeriod('ALL')
     @logout="handleLogout"
   >
     <div class="flex flex-col gap-4">
-      <section class="border border-gray-300 bg-white p-4 shadow-sm">
-        <p class="text-[10px] font-black uppercase tracking-[0.14em] text-gray-500">Warehouse Outbound</p>
-        <h1 class="mt-1 text-lg font-black text-gray-900">출고 리스트</h1>
-        <p class="mt-1 text-xs font-bold text-gray-500">매장 발주 승인 건 기준으로 출고 진행 상태를 관리합니다.</p>
+      <section class="border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-emerald-50/40 p-5 shadow-sm">
+        <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500">Warehouse Outbound</p>
+        <h1 class="mt-1 text-xl font-black text-slate-900">출고 리스트</h1>
+        <p class="mt-1 text-sm font-semibold text-slate-600">매장 출고, 창고간 이동, 순환재고 판매 출고를 통합 관리합니다.</p>
       </section>
 
-      <section class="border border-gray-300 bg-white p-3 shadow-sm">
-        <div class="flex flex-wrap gap-1">
-          <button
-            v-for="tab in STATUS_TABS"
-            :key="tab.key"
-            type="button"
-            class="inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-black transition-colors"
-            :class="outboundStore.activeStatusTab === tab.key
-              ? 'border-[#004D3C] bg-[#004D3C] text-white'
-              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
-            @click="changeTab(tab.key)"
-          >
-            <span>{{ tab.label }}</span>
-            <span
-              class="min-w-[18px] px-1 py-0.5 text-center text-[10px]"
-              :class="outboundStore.activeStatusTab === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'"
+      <section class="border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="mb-4 flex flex-col gap-3 pb-1 lg:flex-row lg:items-start lg:justify-between">
+          <div class="grid gap-1 lg:grid-cols-[66px_1fr] lg:items-center">
+            <p class="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">출고 상태</p>
+            <div class="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/80 p-1">
+              <button
+                v-for="tab in STATUS_TABS"
+                :key="tab.key"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-black transition-colors"
+                :class="outboundStore.activeStatusTab === tab.key
+                  ? 'border-emerald-800 bg-emerald-800 text-white shadow-sm'
+                  : 'border-transparent bg-white text-slate-600 hover:bg-slate-50'"
+                @click="changeTab(tab.key)"
+              >
+                <span>{{ tab.label }}</span>
+                <span
+                  class="min-w-[20px] rounded-md px-1.5 py-0.5 text-center text-[10px]"
+                  :class="outboundStore.activeStatusTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'"
+                >
+                  {{ outboundStore.statusCounts[tab.key] }}
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="grid gap-1 lg:grid-cols-[66px_1fr] lg:items-center">
+            <p class="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">출고 유형</p>
+            <select
+              v-model="outboundStore.activeTypeTab"
+              class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition-colors focus:border-emerald-700"
             >
-              {{ outboundStore.statusCounts[tab.key] }}
-            </span>
-          </button>
+              <option
+                v-for="option in TYPE_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
         </div>
       </section>
 
-      <section class="overflow-hidden border border-gray-300 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-2">
-          <div class="mr-1 inline-flex overflow-hidden border border-gray-300 bg-white">
+      <section class="overflow-hidden border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3">
+          <div class="inline-flex overflow-hidden rounded-xl border border-slate-300 bg-white">
             <button
               v-for="period in PERIOD_TABS"
               :key="period.key"
               type="button"
-              class="px-3 py-1.5 text-xs font-black transition-colors"
+              class="px-3 py-2 text-xs font-extrabold transition-colors"
               :class="activePeriod === period.key
-                ? 'bg-[#004D3C] text-white'
-                : 'text-gray-600 hover:bg-gray-100'"
+                ? 'bg-emerald-800 text-white'
+                : 'text-slate-600 hover:bg-slate-100'"
               @click="applyPeriod(period.key)"
             >
               {{ period.label }}
@@ -148,49 +174,52 @@ applyPeriod('ALL')
           <input
             v-model="outboundStore.dateFrom"
             type="date"
-            class="border border-gray-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#004D3C]"
+            class="h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-emerald-700"
           />
-          <span class="text-xs text-gray-400">~</span>
+          <span class="text-xs font-bold text-slate-400">~</span>
           <input
             v-model="outboundStore.dateTo"
             type="date"
-            class="border border-gray-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#004D3C]"
+            class="h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-emerald-700"
           />
           <input
             v-model="outboundStore.searchKeyword"
             type="text"
-            placeholder="출고번호/발주번호/매장명/대표상품 검색"
-            class="ml-auto w-72 border border-gray-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#004D3C]"
+            placeholder="출고번호/발주번호/출고처/목적지/대표상품 검색"
+            class="h-9 min-w-[260px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-emerald-700 lg:ml-auto lg:max-w-[420px]"
           />
         </div>
 
         <div class="overflow-auto">
-          <table class="w-full min-w-[980px] table-fixed border-collapse text-xs">
-            <thead class="bg-gray-100 text-[10px] uppercase tracking-wider text-gray-500">
+          <table class="w-full table-fixed border-collapse text-xs">
+            <thead class="bg-slate-100/90 text-[10px] uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th class="w-40 px-3 py-2 text-left font-black">출고번호</th>
-                <th class="w-36 px-3 py-2 text-left font-black">발주번호</th>
-                <th class="w-24 px-3 py-2 text-left font-black">유형</th>
-                <th class="w-36 px-3 py-2 text-left font-black">매장</th>
-                <th class="w-44 px-3 py-2 text-left font-black">대표 상품</th>
-                <th class="w-20 px-3 py-2 text-right font-black">총 SKU</th>
-                <th class="w-24 px-3 py-2 text-right font-black">총 수량</th>
-                <th class="w-28 px-3 py-2 text-center font-black">상태</th>
-                <th class="w-36 px-3 py-2 text-left font-black">요청일시</th>
+                <th class="w-[16%] px-4 py-3 text-left font-black">출고번호</th>
+                <th class="w-[12%] px-4 py-3 text-left font-black">발주번호</th>
+                <th class="w-[11%] px-4 py-3 text-left font-black">유형</th>
+                <th class="w-[15%] px-4 py-3 text-left font-black">도착 매장/물류창고</th>
+                <th class="w-[20%] px-4 py-3 text-left font-black">대표 상품</th>
+                <th class="w-[8%] px-4 py-3 text-right font-black">총 수량</th>
+                <th class="w-[8%] px-4 py-3 text-center font-black">상태</th>
+                <th class="w-[10%] px-4 py-3 text-left font-black">요청일시</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-slate-100">
               <tr
                 v-for="row in rows"
                 :key="row.outboundId"
-                class="cursor-pointer transition-colors hover:bg-gray-50"
+                class="cursor-pointer transition-colors hover:bg-emerald-50/40"
                 @click="openDetail(row.outboundId)"
               >
-                <td class="px-3 py-3 font-bold text-gray-500">{{ row.outboundId }}</td>
-                <td class="px-3 py-3 font-black text-gray-900">{{ row.orderId }}</td>
-                <td class="px-3 py-3 font-bold text-gray-700">{{ outboundStore.outboundTypeLabelMap[row.outboundType] }}</td>
-                <td class="px-3 py-3 font-bold text-gray-700">{{ row.storeName }}</td>
-                <td class="truncate px-3 py-3 font-bold text-gray-700">
+                <td class="whitespace-nowrap px-4 py-3 font-bold text-slate-500">{{ row.outboundId }}</td>
+                <td class="px-4 py-3 font-black text-slate-900">{{ row.orderId }}</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">
+                    {{ outboundStore.outboundTypeLabelMap[row.outboundType] }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 font-bold text-slate-700">{{ row.targetName }}</td>
+                <td class="truncate px-4 py-3 font-bold text-slate-700">
                   <template v-if="row.totalSkuCount > 1">
                     {{ row.headlineProduct }} 외 {{ row.totalSkuCount - 1 }}건
                   </template>
@@ -198,17 +227,16 @@ applyPeriod('ALL')
                     {{ row.headlineProduct }}
                   </template>
                 </td>
-                <td class="px-3 py-3 text-right font-black text-gray-700">{{ row.totalSkuCount }}</td>
-                <td class="px-3 py-3 text-right font-black text-gray-700">{{ row.totalRequestedQuantity }}</td>
-                <td class="px-3 py-3 text-center">
-                  <span class="inline-flex px-2 py-1 text-[10px] font-black" :class="statusClass(row.status)">
+                <td class="px-4 py-3 text-right font-black text-slate-700">{{ row.totalRequestedQuantity }}</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex rounded-md px-2.5 py-1 text-[10px] font-black" :class="statusClass(row.status)">
                     {{ outboundStore.outboundStatusLabelMap[row.status] }}
                   </span>
                 </td>
-                <td class="px-3 py-3 font-bold text-gray-500">{{ formatDate(row.requestedAt) }}</td>
+                <td class="whitespace-nowrap px-4 py-3 font-bold text-slate-500">{{ formatDate(row.requestedAt) }}</td>
               </tr>
               <tr v-if="rows.length === 0">
-                <td colspan="9" class="px-3 py-10 text-center text-xs text-gray-400">
+                <td colspan="8" class="px-4 py-14 text-center text-sm font-semibold text-slate-400">
                   조건에 맞는 출고 리스트가 없습니다.
                 </td>
               </tr>

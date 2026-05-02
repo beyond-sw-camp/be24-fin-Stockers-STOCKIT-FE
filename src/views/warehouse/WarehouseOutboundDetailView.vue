@@ -56,7 +56,7 @@ function historyStatusLabel(history) {
 function confirmOutbound() {
   if (!outbound.value) return
   const actor = auth.user?.storeName || '서울 1센터'
-  const result = outboundStore.startTransit(outbound.value.outboundId, actor)
+  const result = outboundStore.confirmOutbound(outbound.value.outboundId, actor)
   resultMessage.value = result.success ? '출고 확정 처리되어 배송중으로 전환되었습니다.' : result.message
 }
 </script>
@@ -94,8 +94,8 @@ function confirmOutbound() {
             <div class="grid gap-3 md:grid-cols-2">
               <p class="text-xs font-bold text-gray-500">출고번호 <strong class="ml-2 text-gray-900">{{ outbound.outboundId }}</strong></p>
               <p class="text-xs font-bold text-gray-500">발주번호 <strong class="ml-2 text-gray-900">{{ outbound.orderId }}</strong></p>
-              <p class="text-xs font-bold text-gray-500">창고 <strong class="ml-2 text-gray-900">{{ outbound.warehouseName }}</strong></p>
-              <p class="text-xs font-bold text-gray-500">매장 <strong class="ml-2 text-gray-900">{{ outbound.storeName }}</strong></p>
+              <p class="text-xs font-bold text-gray-500">출고처 <strong class="ml-2 text-gray-900">{{ outbound.sourceName }}</strong></p>
+              <p class="text-xs font-bold text-gray-500">목적지 <strong class="ml-2 text-gray-900">{{ outbound.targetName }}</strong></p>
               <p class="text-xs font-bold text-gray-500">출고유형 <strong class="ml-2 text-gray-900">{{ outboundStore.outboundTypeLabelMap[outbound.outboundType] }}</strong></p>
               <p class="text-xs font-bold text-gray-500">요청일시 <strong class="ml-2 text-gray-900">{{ formatDate(outbound.requestedAt) }}</strong></p>
             </div>
@@ -149,13 +149,16 @@ function confirmOutbound() {
               <button
                 type="button"
                 class="w-full border border-[#004D3C] bg-[#004D3C] px-3 py-2 text-xs font-black text-white hover:bg-[#1f4b3a] disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-200 disabled:text-gray-500"
-                :disabled="outbound.status !== 'READY_TO_SHIP'"
+                :disabled="outbound.status !== 'READY_TO_SHIP' || !outbound.actionable"
                 @click="confirmOutbound"
               >
                 출고확정
               </button>
-              <p class="text-[11px] font-bold text-gray-500">
+              <p v-if="outbound.actionable" class="text-[11px] font-bold text-gray-500">
                 출고확정 시 상태가 배송중으로 변경됩니다. 완료 상태는 매장 입고 확정 후 자동 반영됩니다.
+              </p>
+              <p v-else class="text-[11px] font-bold text-gray-500">
+                {{ outboundStore.outboundTypeLabelMap[outbound.outboundType] }} 유형은 현재 조회 전용입니다.
               </p>
               <p v-if="resultMessage" class="text-[11px] font-bold text-[#004D3C]">
                 {{ resultMessage }}
