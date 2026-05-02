@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { purchaseOrderApi } from '@/api/purchaseOrder.js'
-import { getWarehouses } from '@/api/infrastructure.js'
+import { getInfrastructures } from '@/api/infrastructure.js'
 
 // ─── BE ↔ FE 매핑 헬퍼 ─────────────────────────────────────────────────────
 // BE (PurchaseOrder DetailRes/ListRes) ↔ FE store 형식 변환.
@@ -54,8 +54,9 @@ function toFeItem(beItem) {
     productCode: beItem.productCode,
     productName: beItem.productName,
     skuCode: beItem.skuCode ?? '',
-    optionName: beItem.optionName ?? '',
-    optionValue: beItem.optionValue ?? '',
+    color: beItem.color ?? '',
+    size: beItem.size ?? '',
+    displayOption: beItem.displayOption ?? [beItem.color, beItem.size].filter(Boolean).join('/') ,
     quantity: beItem.quantity,
     unitPrice: beItem.unitPrice,
     subtotal: beItem.subtotal,
@@ -88,8 +89,9 @@ function toFeCatalogMaster(beMaster) {
     maxSkuUnitPrice: beMaster.maxSkuUnitPrice,
     skus: Array.isArray(beMaster.skus) ? beMaster.skus.map((s) => ({
       skuCode: s.skuCode,
-      optionName: s.optionName ?? '',
-      optionValue: s.optionValue ?? '',
+      color: s.color ?? '',
+      size: s.size ?? '',
+      displayOption: s.displayOption ?? [s.color, s.size].filter(Boolean).join('/') ,
       unitPrice: s.unitPrice,
     })) : [],
   }
@@ -235,7 +237,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
     }
   })
 
-  // 창고 목록 — BE 에서 fetch (Warehouse 테이블, Long ID)
+  // 창고 목록 — BE infrastructure(type=WAREHOUSE)에서 fetch
   const warehouseList = ref([])
   const warehouses = computed(() =>
     warehouseList.value.map((w) => ({ id: w.id, name: w.name, code: w.code })),
@@ -253,7 +255,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
   // row 형식:
   //   { type: 'header', masterKey, vendorCode, vendorName, vendorProductCode, productCode,
   //     productName, contractUnitPrice, minSkuUnitPrice, maxSkuUnitPrice, skuCount }
-  //   { type: 'sku',    masterKey, skuCode, optionName, optionValue, unitPrice,
+  //   { type: 'sku',    masterKey, skuCode, color, size, displayOption, unitPrice,
   //     vendorCode, vendorName, vendorProductCode, productCode, productName }
   // 정렬 — vendorName 가나다 → productName 가나다 → SKU 는 BE id asc 순서 그대로
   const catalogSkuRows = computed(() => {
@@ -282,8 +284,9 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
           type: 'sku',
           masterKey: m.masterKey,
           skuCode: s.skuCode,
-          optionName: s.optionName,
-          optionValue: s.optionValue,
+          color: s.color,
+          size: s.size,
+          displayOption: s.displayOption,
           unitPrice: s.unitPrice,
           vendorCode: m.vendorCode,
           vendorName: m.vendorName,
@@ -319,7 +322,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
 
   async function fetchWarehouses() {
     try {
-      const list = await getWarehouses()
+      const list = await getInfrastructures({ type: 'WAREHOUSE' })
       warehouseList.value = Array.isArray(list) ? list : []
     } catch (e) {
       console.error('[purchaseOrder] fetchWarehouses 실패', e)
