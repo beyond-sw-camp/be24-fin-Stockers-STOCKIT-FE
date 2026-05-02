@@ -112,7 +112,7 @@ const activeMaterialFilters = computed(() =>
   materialFilters.value.filter(filter => filter.materialGroup),
 )
 
-const circularInventoryData = computed(() =>
+const circularStockData = computed(() =>
   props.inventoryRows.map((item) => ({
     id: item.id,
     itemCode: item.itemCode,
@@ -128,7 +128,7 @@ const circularInventoryData = computed(() =>
 )
 
 const normalizedInventoryData = computed(() =>
-  circularInventoryData.value.map(item => ({
+  circularStockData.value.map(item => ({
     ...item,
     materials: item.materials.map(material => ({
       ...material,

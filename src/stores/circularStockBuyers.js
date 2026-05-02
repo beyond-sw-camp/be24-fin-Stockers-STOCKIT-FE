@@ -141,7 +141,7 @@ function validateBuyerPayload(payload, existingBuyers, currentBuyerId = '') {
   return errors
 }
 
-export const useCircularInventoryBuyerStore = defineStore('circularInventoryBuyers', () => {
+export const useCircularStockBuyerStore = defineStore('circularStockBuyers', () => {
   // --- state ---
   const buyers = ref([])
   const loading = ref(false)
@@ -267,6 +267,5 @@ export const useCircularInventoryBuyerStore = defineStore('circularInventoryBuye
     fetchAll,
     createBuyer,
     updateBuyer,
-    deleteBuyer,
   }
 })
