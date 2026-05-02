@@ -20,6 +20,14 @@ const STATUS_TABS = [
   { key: 'IN_TRANSIT', label: '배송중' },
   { key: 'COMPLETED', label: '완료' },
 ]
+const PERIOD_TABS = [
+  { key: 'ALL', label: '전체' },
+  { key: 'DAY', label: '일' },
+  { key: 'MONTH', label: '월' },
+  { key: 'YEAR', label: '년' },
+]
+
+const activePeriod = ref('ALL')
 
 const rows = computed(() => outboundStore.filteredOutboundList)
 
@@ -50,6 +58,37 @@ function formatDate(iso) {
   if (!iso) return '-'
   return iso.replace('T', ' ').slice(0, 16)
 }
+
+function toYmd(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function applyPeriod(periodKey) {
+  const now = new Date()
+  let fromDate = new Date(now)
+
+  if (periodKey === 'ALL') {
+    activePeriod.value = periodKey
+    outboundStore.dateFrom = ''
+    outboundStore.dateTo = ''
+    return
+  }
+
+  if (periodKey === 'MONTH') {
+    fromDate.setMonth(now.getMonth() - 1)
+  } else if (periodKey === 'YEAR') {
+    fromDate.setFullYear(now.getFullYear() - 1)
+  }
+
+  activePeriod.value = periodKey
+  outboundStore.dateFrom = toYmd(fromDate)
+  outboundStore.dateTo = toYmd(now)
+}
+
+applyPeriod('ALL')
 </script>
 
 <template>
@@ -92,6 +131,20 @@ function formatDate(iso) {
 
       <section class="overflow-hidden border border-gray-300 bg-white shadow-sm">
         <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-2">
+          <div class="mr-1 inline-flex overflow-hidden border border-gray-300 bg-white">
+            <button
+              v-for="period in PERIOD_TABS"
+              :key="period.key"
+              type="button"
+              class="px-3 py-1.5 text-xs font-black transition-colors"
+              :class="activePeriod === period.key
+                ? 'bg-[#004D3C] text-white'
+                : 'text-gray-600 hover:bg-gray-100'"
+              @click="applyPeriod(period.key)"
+            >
+              {{ period.label }}
+            </button>
+          </div>
           <input
             v-model="outboundStore.dateFrom"
             type="date"
