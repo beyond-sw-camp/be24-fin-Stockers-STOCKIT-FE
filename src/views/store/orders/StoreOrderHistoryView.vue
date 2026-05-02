@@ -5,6 +5,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useStoreOrderStore } from '@/stores/storeOrder.js'
+import { buildHeadline, formatDateTime, storeOrderStatusClass } from '@/features/store/common/ui.js'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -23,27 +24,12 @@ const STATUS_TABS = [
   { label: '취소', key: 'CANCELLED' },
 ]
 
-function formatDateTime(iso) {
-  if (!iso) return '-'
-  const date = new Date(iso)
-  const pad = (value) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
 function headlineLabel(order) {
-  if (!order || order.items.length === 0) return '-'
-  return order.items.length > 1
-    ? `${order.items[0].productName} 외 ${order.items.length - 1}건`
-    : order.items[0].productName
+  return buildHeadline(order?.items)
 }
 
 function statusClass(status) {
-  return {
-    REQUESTED: 'bg-amber-100 text-amber-700',
-    APPROVED: 'bg-[#EBF5F5] text-black',
-    COMPLETED: 'bg-slate-200 text-slate-800',
-    CANCELLED: 'bg-red-100 text-red-700',
-  }[status] ?? 'bg-gray-100 text-gray-600'
+  return storeOrderStatusClass(status)
 }
 
 function changeTab(key) {

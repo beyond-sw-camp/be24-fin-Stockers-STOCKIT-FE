@@ -5,6 +5,7 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import { roleMenus } from '@/config/roleMenus.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useStoreInboundStore } from '@/stores/storeInbound.js'
+import { formatDateTime, storeInboundStatusClass, storeOrderStatusClass } from '@/features/store/common/ui.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -34,29 +35,12 @@ const highlightedInboundHistoryKey = computed(() => {
   return `${lastHistory.status}-${lastHistory.at}`
 })
 
-function formatDateTime(iso) {
-  if (!iso) return '-'
-  const date = new Date(iso)
-  const pad = (value) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
 function statusClass(status) {
-  return {
-    REQUESTED: 'bg-amber-100 text-amber-700',
-    APPROVED: 'bg-[#EBF5F5] text-black',
-    COMPLETED: 'bg-slate-200 text-slate-800',
-    CANCELLED: 'bg-red-100 text-red-700',
-  }[status] ?? 'bg-gray-100 text-gray-600'
+  return storeOrderStatusClass(status)
 }
 
 function inboundStatusClass(status) {
-  return {
-    READY_TO_SHIP: 'bg-slate-100 text-slate-700',
-    IN_TRANSIT: 'bg-blue-100 text-blue-700',
-    ARRIVED: 'bg-amber-100 text-amber-700',
-    RECEIVED: 'bg-[#EBF5F5] text-black',
-  }[status] ?? 'bg-gray-100 text-gray-600'
+  return storeInboundStatusClass(status)
 }
 
 function historyDotClass(status) {
