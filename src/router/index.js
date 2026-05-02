@@ -28,6 +28,7 @@ import WarehouseInventoryView from '@/views/warehouse/WarehouseInventoryView.vue
 import WarehouseInventorySkuDetailView from '@/views/warehouse/WarehouseInventorySkuDetailView.vue'
 import WarehouseInboundView from '@/views/warehouse/WarehouseInboundView.vue'
 import WarehouseOutboundView from '@/views/warehouse/WarehouseOutboundView.vue'
+import WarehouseOutboundDetailView from '@/views/warehouse/WarehouseOutboundDetailView.vue'
 
 import OperationStatusView from '@/views/hq/dashboard/OperationStatusView.vue'
 import InventoryRiskView from '@/views/hq/dashboard/InventoryRiskView.vue'
@@ -236,6 +237,12 @@ const router = createRouter({
       path: '/warehouse/outbound',
       name: 'wh-outbound',
       component: WarehouseOutboundView,
+      meta: { requiresAuth: true, role: 'warehouse' },
+    },
+    {
+      path: '/warehouse/outbound/:id',
+      name: 'wh-outbound-detail',
+      component: WarehouseOutboundDetailView,
       meta: { requiresAuth: true, role: 'warehouse' },
     },
 
